@@ -139,7 +139,7 @@ export function ChatRoom({ messages, activeAccount, rules, onDeleteRule, onDelet
             {rules.map(r => (
               <div key={r.id} className="bg-wa-hover text-wa-textDark text-xs pl-3 pr-1 py-1 rounded-full flex items-center shadow-sm border border-wa-panel">
                 <span>{r.keyword}</span>
-                <button onClick={() => onDeleteRule(r.id)} className="ml-2 p-1 hover:bg-[#3b4a54] rounded-full text-wa-textMuted hover:text-wa-danger">
+                <button onClick={() => onDeleteRule && onDeleteRule(r.id)} className="ml-2 p-1 hover:bg-[#3b4a54] rounded-full text-wa-textMuted hover:text-wa-danger">
                   <Trash2 size={12} />
                 </button>
               </div>
