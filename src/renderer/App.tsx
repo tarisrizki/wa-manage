@@ -217,16 +217,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Rule Engine / Filter (membentang penuh) */}
-          {isActiveAccountConnected && (
-            <div className="bg-[#202c33] border-b border-[#313d45] shadow-sm">
-              <RuleEngine 
-                rules={rules} 
-                onAddRule={handleAddRule} 
-                onDeleteRule={handleDeleteRule} 
-              />
-            </div>
-          )}
         </div>
       )}
 
@@ -268,6 +258,11 @@ export default function App() {
                   {/* PANEL 2: OBROLAN GRUP */}
                   <Panel id="panel-group" defaultSize={37.5} minSize={20}>
                     <div className="h-full flex flex-col bg-wa-chatBg overflow-hidden">
+                      <RuleEngine 
+                        rules={rules} 
+                        onAddRule={handleAddRule} 
+                        onDeleteRule={handleDeleteRule} 
+                      />
                       <ChatRoom 
                         title="🏢 Obrolan Grup"
                         messages={filteredMessages.filter(m => m.isGroup)} 

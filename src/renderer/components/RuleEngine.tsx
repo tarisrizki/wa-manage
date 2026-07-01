@@ -19,44 +19,41 @@ export function RuleEngine({ rules, onAddRule, onDeleteRule }: RuleEngineProps) 
   };
 
   return (
-    <div className="min-h-[62px] flex flex-col justify-center px-4 py-3 shrink-0 z-10 w-full">
+    <div className="flex flex-col justify-center px-4 py-2 shrink-0 z-10 w-full bg-[#111b21] border-b border-[#202c33]">
       <div className="flex items-center w-full">
-        <div className="flex items-center space-x-2 sm:space-x-3 text-wa-textMuted bg-wa-hover px-2 sm:px-3 py-1.5 rounded-md border border-wa-border/50 shrink-0">
-          <Filter size={18} className="text-wa-green shrink-0" />
-          <span className="text-sm font-medium text-wa-textDark whitespace-nowrap hidden md:inline">Filter Obrolan Grup:</span>
-        </div>
-        <form onSubmit={handleSubmit} className="flex-1 flex bg-wa-panel rounded-lg px-3 sm:px-4 py-2 mx-2 sm:mx-3 shadow-inner border border-wa-border min-w-0">
+        <form onSubmit={handleSubmit} className="flex-1 flex items-center bg-[#202c33] rounded-lg px-3 py-1.5 shadow-inner border border-transparent focus-within:border-[#313d45] transition-colors min-w-0">
+          <Filter size={15} className="text-[#8696a0] mr-2 shrink-0" />
           <input 
             type="text" 
-            placeholder="Ketik kata kunci..." 
+            placeholder="Saring obrolan grup..." 
             value={newKeyword}
             onChange={(e) => setNewKeyword(e.target.value)}
-            className="bg-transparent w-full text-wa-textDark placeholder:text-wa-textMuted outline-none text-[14px]"
+            className="bg-transparent w-full text-[#e9edef] placeholder:text-[#8696a0] outline-none text-[13.5px]"
           />
         </form>
-        <button 
-          type="button"
-          onClick={handleSubmit}
-          disabled={!newKeyword.trim()}
-          className={`px-3 sm:px-4 py-2 shrink-0 rounded-lg font-medium transition-colors ${newKeyword.trim() ? 'bg-wa-green hover:bg-wa-greenHover text-white shadow-sm' : 'bg-wa-panel text-wa-textMuted cursor-not-allowed'}`}
-        >
-          <span className="hidden sm:inline">Tambah Rule</span>
-          <span className="sm:hidden">Tambah</span>
-        </button>
+        {newKeyword.trim() && (
+          <button 
+            type="button"
+            onClick={handleSubmit}
+            className="ml-2 px-3 py-1.5 shrink-0 rounded-lg font-medium transition-colors bg-[#00a884] hover:bg-[#008f6f] text-white text-[13px] shadow-sm"
+          >
+            Tambah
+          </button>
+        )}
       </div>
 
       {/* Daftar Filter Aktif */}
       {rules && rules.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3 ml-0 sm:ml-[44px] md:ml-[156px]">
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
           {rules.map((rule) => (
-            <div key={rule.id} className="flex items-center bg-[#005c4b]/30 border border-[#00a884]/30 text-[#00a884] px-3 py-1 rounded-full text-xs font-medium">
+            <div key={rule.id} className="flex items-center bg-[#005c4b]/40 border border-[#00a884]/30 text-[#00a884] px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide">
               <span>{rule.keyword}</span>
               <button 
                 onClick={() => onDeleteRule(rule.id)}
-                className="ml-2 p-0.5 hover:bg-[#00a884]/20 rounded-full transition-colors text-[#00a884] hover:text-white"
+                className="ml-1.5 p-0.5 hover:bg-[#00a884]/20 rounded-sm transition-colors text-[#00a884] hover:text-white"
                 title="Hapus Filter"
               >
-                <X size={12} strokeWidth={2.5} />
+                <X size={11} strokeWidth={2.5} />
               </button>
             </div>
           ))}
