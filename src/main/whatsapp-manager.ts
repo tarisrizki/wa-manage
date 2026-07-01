@@ -250,7 +250,8 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
         const messageLower = textContent.toLowerCase();
         
         for (const rule of rules) {
-          if (messageLower.includes(rule.keyword.toLowerCase())) {
+          const kw = rule.keyword?.trim();
+          if (kw && kw !== '' && messageLower.includes(kw.toLowerCase())) {
             console.log(`[RULE ENGINE] Pesan masuk cocok dengan keyword: "${rule.keyword}"`);
             
             // Panggil Native OS Notification
