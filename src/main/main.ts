@@ -147,9 +147,9 @@ ipcMain.on('delete-message', (event, msgKeyId: string) => {
   deleteMessage(msgKeyId);
 });
 
-ipcMain.on('clear-messages', (event, accountId: string) => {
+ipcMain.on('clear-messages', (event, accountId: string, isGroup?: boolean) => {
   const { clearAllMessages } = require('./database');
-  clearAllMessages(accountId);
+  clearAllMessages(accountId, isGroup);
 });
 
 // [FITUR BARU] Endpoint untuk memuat riwayat obrolan

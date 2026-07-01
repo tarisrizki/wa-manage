@@ -160,17 +160,20 @@ export default function App() {
     window.api.deleteMessage(msgKeyId);
   };
   
-  const handleClearMessages = () => {
+  const handleClearMessages = (isGroup: boolean) => {
     if (!activeAccount) return;
     
-    // Kosongkan state untuk akun ini
-    setMessages(prev => ({
-      ...prev,
-      [activeAccount]: []
-    }));
+    // Kosongkan state untuk akun ini (hanya tipe pesan yang diminta)
+    setMessages(prev => {
+      const accMsgs = prev[activeAccount] || [];
+      return {
+        ...prev,
+        [activeAccount]: accMsgs.filter(m => m.isGroup !== isGroup)
+      };
+    });
     
     // Kosongkan dari SQLite (Backend)
-    window.api.clearMessages(activeAccount);
+    window.api.clearMessages(activeAccount, isGroup);
   };
 
   return (
@@ -247,7 +250,7 @@ export default function App() {
                         rules={rules}
                         onDeleteRule={handleDeleteRule}
                         onDeleteMessage={handleDeleteMessage}
-                        onClearMessages={handleClearMessages}
+                        onClearMessages={() => handleClearMessages(true)}
                       />
                     </div>
                   </Panel>
@@ -269,7 +272,7 @@ export default function App() {
                         rules={rules}
                         onDeleteRule={handleDeleteRule}
                         onDeleteMessage={handleDeleteMessage}
-                        onClearMessages={handleClearMessages}
+                        onClearMessages={() => handleClearMessages(false)}
                       />
                     </div>
                   </Panel>

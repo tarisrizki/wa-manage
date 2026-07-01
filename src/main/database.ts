@@ -96,9 +96,13 @@ export function deleteMessage(msgKeyId: string) {
   }
 }
 
-export function clearAllMessages(accountId: string) {
+export function clearAllMessages(accountId: string, isGroup?: boolean) {
   try {
-    db.prepare(`DELETE FROM messages WHERE account_id = ?`).run(accountId);
+    if (isGroup === undefined) {
+      db.prepare(`DELETE FROM messages WHERE account_id = ?`).run(accountId);
+    } else {
+      db.prepare(`DELETE FROM messages WHERE account_id = ? AND is_group = ?`).run(accountId, isGroup ? 1 : 0);
+    }
   } catch (err) {
     console.error("Gagal membersihkan pesan:", err);
   }

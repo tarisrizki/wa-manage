@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('api', {
   // Fitur Pesan
   getMessages: (accountId: string) => ipcRenderer.invoke('get-messages', accountId),
   deleteMessage: (msgKeyId: string) => ipcRenderer.send('delete-message', msgKeyId),
-  clearMessages: (accountId: string) => ipcRenderer.send('clear-messages', accountId),
+  clearMessages: (accountId: string, isGroup?: boolean) => ipcRenderer.send('clear-messages', accountId, isGroup),
   
   // Listener untuk pesan WhatsApp yang masuk
   onWhatsAppMessage: (callback: (data: any) => void) => {
