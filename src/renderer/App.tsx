@@ -81,6 +81,20 @@ export default function App() {
     }
   }, [activeAccount]);
 
+  // Load Riwayat Pesan saat akun berganti
+  useEffect(() => {
+    if (activeAccount) {
+      window.api.getMessages(activeAccount)
+        .then(history => {
+          setMessages(prev => ({
+            ...prev,
+            [activeAccount]: history
+          }));
+        })
+        .catch(err => console.error("Gagal memuat riwayat pesan:", err));
+    }
+  }, [activeAccount]);
+
   const handleAddAccount = (cleanId: string) => {
     setSavedAccounts(prev => Array.from(new Set([...prev, cleanId])));
     window.api.addWhatsAppAccount(cleanId);

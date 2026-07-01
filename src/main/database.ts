@@ -22,6 +22,7 @@ export function initDatabase() {
       is_group BOOLEAN,
       sender_name TEXT,
       group_name TEXT,
+      msg_key_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -100,5 +101,36 @@ export function clearAllMessages(accountId: string) {
     db.prepare(`DELETE FROM messages WHERE account_id = ?`).run(accountId);
   } catch (err) {
     console.error("Gagal membersihkan pesan:", err);
+  }
+}
+
+export function getMessages(accountId: string) {
+  try {
+    // Ambil 200 pesan terakhir, urutkan dari yang terlama (ASC) ke terbaru
+    const rows = db.prepare(`
+      SELECT * FROM messages 
+      WHERE account_id = ? 
+      ORDER BY id DESC 
+      LIMIT 200
+    `).all(accountId) as any[];
+    
+    // SQLite mengembalikan dari terbaru ke terlama karena DESC, kita balik urutannya
+    return rows.reverse().map(row => ({
+      accountId: row.account_id,
+      isGroup: row.is_group === 1,
+      textContent: row.content,
+      senderName: row.sender_name,
+      groupName: row.group_name,
+      msg: {
+        key: {
+          id: row.msg_key_id,
+          remoteJid: row.remote_jid,
+          fromMe: false // Karena kita hanya menyimpan pesan masuk
+        }
+      }
+    }));
+  } catch (err) {
+    console.error("Gagal memuat pesan riwayat:", err);
+    return [];
   }
 }

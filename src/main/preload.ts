@@ -14,7 +14,8 @@ contextBridge.exposeInMainWorld('api', {
   deleteRule: (id: number) => ipcRenderer.invoke('delete-rule', id),
   deleteAccount: (accountId: string) => ipcRenderer.invoke('delete-account', accountId),
   
-  // Fitur Hapus Pesan
+  // Fitur Pesan
+  getMessages: (accountId: string) => ipcRenderer.invoke('get-messages', accountId),
   deleteMessage: (msgKeyId: string) => ipcRenderer.send('delete-message', msgKeyId),
   clearMessages: (accountId: string) => ipcRenderer.send('clear-messages', accountId),
   

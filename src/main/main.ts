@@ -151,3 +151,9 @@ ipcMain.on('clear-messages', (event, accountId: string) => {
   const { clearAllMessages } = require('./database');
   clearAllMessages(accountId);
 });
+
+// [FITUR BARU] Endpoint untuk memuat riwayat obrolan
+ipcMain.handle('get-messages', (event, accountId: string) => {
+  const { getMessages } = require('./database');
+  return getMessages(accountId);
+});
