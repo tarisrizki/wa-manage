@@ -142,6 +142,10 @@ export default function App() {
   };
 
   const filteredMessages = activeAccount ? (messages[activeAccount] || []).filter(msg => {
+    // Sesuai permintaan: Filter KHUSUS untuk Grup.
+    // Pesan pribadi (!msg.isGroup) selalu tampil semua tanpa difilter.
+    if (!msg.isGroup) return true;
+
     if (!rules || rules.length === 0) return true;
     
     // Gunakan textContent yang sudah disediakan dari backend/database

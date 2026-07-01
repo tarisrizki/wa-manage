@@ -23,7 +23,7 @@ export function RuleEngine({ rules, onAddRule, onDeleteRule }: RuleEngineProps) 
       <div className="flex items-center w-full">
         <div className="flex items-center space-x-2 sm:space-x-3 text-wa-textMuted bg-wa-hover px-2 sm:px-3 py-1.5 rounded-md border border-wa-border/50 shrink-0">
           <Filter size={18} className="text-wa-green shrink-0" />
-          <span className="text-sm font-medium text-wa-textDark whitespace-nowrap hidden md:inline">Filter Notifikasi:</span>
+          <span className="text-sm font-medium text-wa-textDark whitespace-nowrap hidden md:inline">Filter Obrolan Grup:</span>
         </div>
         <form onSubmit={handleSubmit} className="flex-1 flex bg-wa-panel rounded-lg px-3 sm:px-4 py-2 mx-2 sm:mx-3 shadow-inner border border-wa-border min-w-0">
           <input 
