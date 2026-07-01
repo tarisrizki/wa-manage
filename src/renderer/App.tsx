@@ -178,7 +178,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full font-sans text-wa-textDark bg-wa-bg selection:bg-wa-green selection:text-white">
-      <Group direction="horizontal" className="w-full h-full">
+      <Group orientation="horizontal" className="w-full h-full">
         {/* PANEL KIRI (Daftar Akun) */}
         <Panel defaultSize={25} minSize={20} maxSize={40}>
           <Sidebar 
@@ -239,7 +239,7 @@ export default function App() {
                   />
                 </div>
                 
-                <Group direction="horizontal" className="flex-1 w-full h-full relative">
+                <Group orientation="horizontal" className="flex-1 w-full h-full relative">
                   {/* Panel Kiri: Grup */}
                   <Panel defaultSize={50} minSize={20}>
                     <div className="h-full flex flex-col bg-wa-chatBg">
