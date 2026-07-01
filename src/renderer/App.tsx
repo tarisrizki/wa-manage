@@ -141,7 +141,26 @@ export default function App() {
     }
   };
 
-  const filteredMessages = activeAccount ? (messages[activeAccount] || []) : [];
+  const filteredMessages = activeAccount ? (messages[activeAccount] || []).filter(msg => {
+    if (!rules || rules.length === 0) return true;
+    
+    // Ambil teks pesan (sama seperti di backend)
+    let innerMessage = msg.msg?.message;
+    if (innerMessage?.ephemeralMessage?.message) innerMessage = innerMessage.ephemeralMessage.message;
+    else if (innerMessage?.viewOnceMessage?.message) innerMessage = innerMessage.viewOnceMessage.message;
+    else if (innerMessage?.viewOnceMessageV2?.message) innerMessage = innerMessage.viewOnceMessageV2.message;
+    
+    const text = innerMessage?.conversation || 
+                 innerMessage?.extendedTextMessage?.text || 
+                 innerMessage?.imageMessage?.caption || 
+                 innerMessage?.videoMessage?.caption || '';
+                 
+    const textLower = text.toLowerCase();
+    return rules.some(rule => {
+      const kw = rule.keyword?.trim();
+      return kw && textLower.includes(kw.toLowerCase());
+    });
+  }) : [];
   const isActiveAccountConnected = activeAccount && connectedAccounts.includes(activeAccount);
 
   const handleDeleteMessage = (msgKeyId: string) => {
