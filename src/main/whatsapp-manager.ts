@@ -16,6 +16,9 @@ const reconnectAttemptsMap: Record<string, number> = {};
 // Cache rule engine untuk mempercepat pencarian (mencegah lag UI akibat hit DB tiap pesan masuk)
 const rulesCache: Record<string, {keyword: string}[]> = {};
 
+// Cache group metadata agar tidak terkena rate limit
+const groupMetadataCache: Record<string, { subject: string, timestamp: number }> = {};
+
 export function reloadRulesCache(accountId: string) {
   try {
     const db = getDatabase();
@@ -171,27 +174,63 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
       // Identifikasi grup (terverifikasi: akhiran @g.us)
       const isGroup = remoteJid.endsWith('@g.us');
       
-      // Mengambil teks biasa atau caption gambar/video
-      let textContent = msg.message?.conversation || 
-                          msg.message?.extendedTextMessage?.text || 
-                          msg.message?.imageMessage?.caption || 
-                          msg.message?.videoMessage?.caption || '';
-                          
-      // Jika pesan adalah media (gambar/stiker/dsb) namun tidak ada caption
-      if (!textContent && (msg.message?.imageMessage || msg.message?.videoMessage || msg.message?.stickerMessage || msg.message?.audioMessage || msg.message?.documentMessage)) {
-        textContent = '[Media/Pesan Non-Teks]';
+      // Resolusi Nama Personal & Grup
+      const senderName = msg.pushName || (msg.key.participant || msg.key.remoteJid)?.split('@')[0] || 'Unknown';
+      let groupName = null;
+      
+      if (isGroup) {
+        try {
+          const now = Date.now();
+          if (!groupMetadataCache[remoteJid] || now - groupMetadataCache[remoteJid].timestamp > 3600000) {
+            const metadata = await sock.groupMetadata(remoteJid);
+            groupMetadataCache[remoteJid] = { subject: metadata.subject, timestamp: now };
+          }
+          groupName = groupMetadataCache[remoteJid].subject;
+        } catch (err) {
+          console.error(`Gagal ambil nama grup ${remoteJid}:`, err);
+        }
+      }
+
+      // Unwrap pesan (ephemeral / viewOnce)
+      let innerMessage = msg.message;
+      if (innerMessage?.ephemeralMessage?.message) {
+        innerMessage = innerMessage.ephemeralMessage.message;
+      } else if (innerMessage?.viewOnceMessage?.message) {
+        innerMessage = innerMessage.viewOnceMessage.message;
+      } else if (innerMessage?.viewOnceMessageV2?.message) {
+        innerMessage = innerMessage.viewOnceMessageV2.message;
       }
       
-      console.log(`[${accountId}] Pesan baru dari ${remoteJid}: "${textContent}"`);
+      // Mengambil teks biasa atau caption gambar/video
+      let textContent = innerMessage?.conversation || 
+                          innerMessage?.extendedTextMessage?.text || 
+                          innerMessage?.imageMessage?.caption || 
+                          innerMessage?.videoMessage?.caption || '';
+                          
+      // Jika pesan adalah media (gambar/stiker/dsb) namun tidak ada caption
+      if (!textContent) {
+        if (innerMessage?.imageMessage || innerMessage?.videoMessage || innerMessage?.stickerMessage || innerMessage?.audioMessage || innerMessage?.documentMessage) {
+          textContent = '[Media/Pesan Non-Teks]';
+        } else if (innerMessage?.reactionMessage || innerMessage?.protocolMessage || innerMessage?.pollCreationMessage) {
+          // Abaikan reaksi, tarikan pesan, atau polling (atau bisa di-handle khusus)
+          return;
+        } else {
+          // [DEBUG] Log struktur pesan yang tidak dikenal
+          console.log(`[DEBUG - Tipe Tak Tertangani]`, JSON.stringify(msg.message, null, 2));
+          textContent = '[Tipe Pesan Tak Tertangani]';
+        }
+      }
+      
+      console.log(`[${accountId}] Pesan baru dari ${senderName}${isGroup ? ` di grup ${groupName}` : ''}: "${textContent}"`);
       
       // Simpan ke SQLite
       try {
         const db = getDatabase();
-        if (textContent.trim()) {
+        if (textContent.trim() && textContent !== '[Tipe Pesan Tak Tertangani]') {
            db.prepare(`
-             INSERT INTO messages (account_id, remote_jid, content, is_group) 
-             VALUES (?, ?, ?, ?)
-           `).run(accountId, remoteJid, textContent, isGroup ? 1 : 0);
+             INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)
+           `).run(accountId, remoteJid, textContent, isGroup ? 1 : 0, senderName, groupName, msg.key?.id || null);
         }
       } catch (err) {
         console.error(`[${accountId}] Gagal menyimpan pesan ke DB`, err);
@@ -199,7 +238,7 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
       
       // Kirim event ke React Frontend
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('wa-message', { accountId, isGroup, msg, textContent });
+        mainWindow.webContents.send('wa-message', { accountId, isGroup, msg, textContent, senderName, groupName });
       }
 
       // IMPLEMENTASI RULE ENGINE (Menggunakan Cache Memori untuk mencegah lag UI)

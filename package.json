@@ -6,7 +6,7 @@
   "scripts": {
     "dev:renderer": "vite",
     "dev:main": "tsc -p tsconfig.main.json -w",
-    "dev": "npm run build:main && electron .",
+    "dev": "npm run build:main && npm run build:renderer && electron .",
     "build:main": "tsc -p tsconfig.main.json",
     "build:renderer": "vite build",
     "build": "npm run build:main && npm run build:renderer",

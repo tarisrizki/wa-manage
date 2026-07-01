@@ -20,9 +20,30 @@ export function initDatabase() {
       remote_jid TEXT NOT NULL,
       content TEXT,
       is_group BOOLEAN,
+      sender_name TEXT,
+      group_name TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Migrasi skema (tambahkan kolom jika database lama sudah telanjur terbentuk)
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN sender_name TEXT;");
+  } catch (e) {
+    // Abaikan jika kolom sudah ada
+  }
+  
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN group_name TEXT;");
+  } catch (e) {
+    // Abaikan jika kolom sudah ada
+  }
+
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN msg_key_id TEXT;");
+  } catch (e) {
+    // Abaikan jika kolom sudah ada
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS chats (
@@ -64,4 +85,20 @@ export function initDatabase() {
 
 export function getDatabase() {
   return db;
+}
+
+export function deleteMessage(msgKeyId: string) {
+  try {
+    db.prepare(`DELETE FROM messages WHERE msg_key_id = ?`).run(msgKeyId);
+  } catch (err) {
+    console.error("Gagal menghapus pesan:", err);
+  }
+}
+
+export function clearAllMessages(accountId: string) {
+  try {
+    db.prepare(`DELETE FROM messages WHERE account_id = ?`).run(accountId);
+  } catch (err) {
+    console.error("Gagal membersihkan pesan:", err);
+  }
 }

@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld('api', {
   deleteRule: (id: number) => ipcRenderer.invoke('delete-rule', id),
   deleteAccount: (accountId: string) => ipcRenderer.invoke('delete-account', accountId),
   
+  // Fitur Hapus Pesan
+  deleteMessage: (msgKeyId: string) => ipcRenderer.send('delete-message', msgKeyId),
+  clearMessages: (accountId: string) => ipcRenderer.send('clear-messages', accountId),
+  
   // Listener untuk pesan WhatsApp yang masuk
   onWhatsAppMessage: (callback: (data: any) => void) => {
     const handler = (_event: any, data: any) => callback(data);
