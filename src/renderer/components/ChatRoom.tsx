@@ -135,18 +135,19 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
                           {m.senderName || senderId?.split('@')[0] || 'Unknown'}
                         </span>
                       </span>
-                      {/* Delete Icon (muncul saat hover) */}
-                      {onDeleteMessage && m.msg?.key?.id && (
-                        <button 
-                          onClick={() => onDeleteMessage(m.msg.key.id as string)}
-                          className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400 focus:outline-none"
-                          title="Hapus Pesan"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                      <span className="text-[10px] text-gray-500 ml-4 font-medium">{m.isGroup ? 'Group' : 'Personal'}</span>
+                      <span className="text-[10px] text-gray-500 ml-4 font-medium">Group</span>
                     </div>
+                  )}
+
+                  {/* Delete Icon (muncul saat hover) - Berlaku untuk SEMUA pesan */}
+                  {onDeleteMessage && m.msg?.key?.id && (
+                    <button 
+                      onClick={() => onDeleteMessage(m.msg.key.id as string)}
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400 focus:outline-none bg-wa-panel/80 hover:bg-wa-panel rounded-full p-1.5 shadow-sm z-10"
+                      title="Hapus Pesan"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   )}
                   
                   {/* Badge untuk keyword yang cocok */}
