@@ -227,7 +227,7 @@ export default function App() {
       )}
 
       {/* Kontainer Utama dengan 1 Group untuk 3 Panel */}
-      <div className="flex-1 w-full relative z-10 flex">
+      <div className="flex-1 w-full relative z-10 flex min-h-0 overflow-hidden">
         <Group orientation="horizontal" className="w-full h-full">
           {/* PANEL 1: DAFTAR AKUN (Sidebar) */}
           <Panel id="panel-sidebar" defaultSize={25} minSize={15}>
