@@ -130,12 +130,12 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
                   {/* Sender Name in Group */}
                   {m.isGroup && showTail && (
                     <div className="flex items-center justify-between mb-1 pr-2">
-                      <span className="text-[#53bdeb] text-[13px] font-semibold tracking-tight">
-                        <span className="truncate max-w-[120px]">
+                      <div className="text-[#53bdeb] text-[13px] font-semibold tracking-tight flex-1 min-w-0">
+                        <div className="truncate">
                           {m.senderName || senderId?.split('@')[0] || 'Unknown'}
-                        </span>
-                      </span>
-                      <span className="text-[10px] text-gray-500 ml-4 font-medium">Group</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-gray-500 ml-4 font-medium shrink-0">Group</span>
                     </div>
                   )}
 

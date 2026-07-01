@@ -201,13 +201,13 @@ export default function App() {
             <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center mr-4">
               <Smartphone className="text-slate-300" size={20} />
             </div>
-            <div className="flex-1 flex flex-col">
-              <span className="text-white text-base font-medium">{activeAccount}</span>
-              <span className="text-xs text-wa-textMuted">
+            <div className="flex-1 flex flex-col min-w-0">
+              <span className="text-white text-base font-medium truncate">{activeAccount}</span>
+              <span className="text-xs text-wa-textMuted truncate">
                 {isActiveAccountConnected ? 'Online' : 'Membutuhkan tindakan'}
               </span>
             </div>
-            <div className="flex items-center space-x-4 text-[#aebac1]">
+            <div className="flex items-center space-x-2 sm:space-x-4 text-[#aebac1] shrink-0">
               <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><Search size={20} /></button>
               <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><MoreVertical size={20} /></button>
             </div>

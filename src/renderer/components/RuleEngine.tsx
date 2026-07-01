@@ -21,14 +21,14 @@ export function RuleEngine({ rules, onAddRule, onDeleteRule }: RuleEngineProps) 
   return (
     <div className="min-h-[62px] flex flex-col justify-center px-4 py-3 shrink-0 z-10 w-full">
       <div className="flex items-center w-full">
-        <div className="flex items-center space-x-3 text-wa-textMuted bg-wa-hover px-3 py-1.5 rounded-md border border-wa-border/50">
-          <Filter size={18} className="text-wa-green" />
-          <span className="text-sm font-medium text-wa-textDark whitespace-nowrap">Filter Notifikasi:</span>
+        <div className="flex items-center space-x-2 sm:space-x-3 text-wa-textMuted bg-wa-hover px-2 sm:px-3 py-1.5 rounded-md border border-wa-border/50 shrink-0">
+          <Filter size={18} className="text-wa-green shrink-0" />
+          <span className="text-sm font-medium text-wa-textDark whitespace-nowrap hidden md:inline">Filter Notifikasi:</span>
         </div>
-        <form onSubmit={handleSubmit} className="flex-1 flex bg-wa-panel rounded-lg px-4 py-2 mx-3 shadow-inner border border-wa-border">
+        <form onSubmit={handleSubmit} className="flex-1 flex bg-wa-panel rounded-lg px-3 sm:px-4 py-2 mx-2 sm:mx-3 shadow-inner border border-wa-border min-w-0">
           <input 
             type="text" 
-            placeholder="Ketik kata kunci penting (contoh: komplain, transfer, nama staf)..." 
+            placeholder="Ketik kata kunci..." 
             value={newKeyword}
             onChange={(e) => setNewKeyword(e.target.value)}
             className="bg-transparent w-full text-wa-textDark placeholder:text-wa-textMuted outline-none text-[14px]"
@@ -38,15 +38,16 @@ export function RuleEngine({ rules, onAddRule, onDeleteRule }: RuleEngineProps) 
           type="button"
           onClick={handleSubmit}
           disabled={!newKeyword.trim()}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${newKeyword.trim() ? 'bg-wa-green hover:bg-wa-greenHover text-white shadow-sm' : 'bg-wa-panel text-wa-textMuted cursor-not-allowed'}`}
+          className={`px-3 sm:px-4 py-2 shrink-0 rounded-lg font-medium transition-colors ${newKeyword.trim() ? 'bg-wa-green hover:bg-wa-greenHover text-white shadow-sm' : 'bg-wa-panel text-wa-textMuted cursor-not-allowed'}`}
         >
-          Tambah Rule
+          <span className="hidden sm:inline">Tambah Rule</span>
+          <span className="sm:hidden">Tambah</span>
         </button>
       </div>
 
       {/* Daftar Filter Aktif */}
       {rules && rules.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3 ml-[150px]">
+        <div className="flex flex-wrap gap-2 mt-3 ml-0 sm:ml-[44px] md:ml-[156px]">
           {rules.map((rule) => (
             <div key={rule.id} className="flex items-center bg-[#005c4b]/30 border border-[#00a884]/30 text-[#00a884] px-3 py-1 rounded-full text-xs font-medium">
               <span>{rule.keyword}</span>
