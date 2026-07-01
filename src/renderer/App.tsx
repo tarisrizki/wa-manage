@@ -258,9 +258,9 @@ export default function App() {
                   />
                 </div>
                 
-                <Group orientation="horizontal" className="flex-1 w-full h-full relative">
+                <Group id="main-group" orientation="horizontal" className="flex-1 w-full h-full relative">
                   {/* Panel Kiri: Grup */}
-                  <Panel defaultSize={50} minSize={20}>
+                  <Panel id="panel-left" defaultSize={50} minSize={20}>
                     <div className="h-full flex flex-col bg-wa-chatBg">
                       <ChatRoom 
                         title="🏢 Obrolan Grup"
@@ -275,14 +275,14 @@ export default function App() {
                   </Panel>
 
                   {/* Pembatas Fleksibel (Resize Handle) */}
-                  <Separator className="group flex items-center justify-center w-2 hover:w-3 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] transition-all cursor-col-resize z-30">
-                    <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full transition-colors">
+                  <Separator id="main-separator" className="group flex items-center justify-center w-2 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] cursor-col-resize z-30">
+                    <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full">
                       <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
                     </div>
                   </Separator>
 
                   {/* Panel Kanan: Pribadi */}
-                  <Panel defaultSize={50} minSize={20}>
+                  <Panel id="panel-right" defaultSize={50} minSize={20}>
                     <div className="h-full flex flex-col bg-wa-chatBg border-l border-[#313d45]/30">
                       <ChatRoom 
                         title="👤 Pesan Pribadi"
