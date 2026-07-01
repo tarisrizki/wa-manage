@@ -94,7 +94,10 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
             
             // Memperbaiki Fallback Key: kombinasi id + remoteJid + idx agar unik
             const uniqueKey = m.msg?.key?.id ? `${m.msg.key.id}-${idx}` : `msg-${idx}`;
-            const isHighlighted = rules.some(r => r.is_active === 1 && m.textContent.toLowerCase().includes(r.keyword.toLowerCase()));
+            // Filter kata kunci: pastikan rules tidak kosong
+            const validRules = rules.filter(r => r.is_active === 1 && r.keyword && r.keyword.trim() !== '');
+            const matchedRules = validRules.filter(r => m.textContent.toLowerCase().includes(r.keyword.toLowerCase()));
+            const isHighlighted = matchedRules.length > 0;
             
             return (
               <motion.div 
@@ -143,6 +146,17 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
                         </button>
                       )}
                       <span className="text-[10px] text-gray-500 ml-4 font-medium">{m.isGroup ? 'Group' : 'Personal'}</span>
+                    </div>
+                  )}
+                  
+                  {/* Badge untuk keyword yang cocok */}
+                  {isHighlighted && matchedRules.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-1.5">
+                      {matchedRules.map(r => (
+                        <span key={r.id} className="bg-[#00a884]/20 text-[#00a884] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                          {r.keyword}
+                        </span>
+                      ))}
                     </div>
                   )}
                   

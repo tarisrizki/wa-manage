@@ -37,7 +37,7 @@ export function Sidebar({
   };
 
   return (
-    <div className="w-[30%] min-w-[300px] max-w-[420px] flex flex-col border-r border-wa-border bg-wa-bg">
+    <div className="w-full h-full flex flex-col border-r border-wa-border bg-wa-bg overflow-hidden">
       {/* Header Kiri */}
       <div className="h-[60px] bg-wa-panel flex items-center justify-between px-4 py-2 shrink-0">
         <div className="w-10 h-10 rounded-full bg-[#6a7175] flex items-center justify-center">

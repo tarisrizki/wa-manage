@@ -161,20 +161,30 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full font-sans text-wa-textDark bg-wa-bg selection:bg-wa-green selection:text-white">
-      
-      {/* PANEL KIRI (Daftar Akun) */}
-      <Sidebar 
-        savedAccounts={savedAccounts}
-        connectedAccounts={connectedAccounts}
-        qrs={qrs}
-        activeAccount={activeAccount}
-        setActiveAccount={setActiveAccount}
-        onAddAccount={handleAddAccount}
-        onDeleteAccount={handleDeleteAccount}
-      />
+      <Group direction="horizontal" className="w-full h-full">
+        {/* PANEL KIRI (Daftar Akun) */}
+        <Panel defaultSize={25} minSize={20} maxSize={40}>
+          <Sidebar 
+            savedAccounts={savedAccounts}
+            connectedAccounts={connectedAccounts}
+            qrs={qrs}
+            activeAccount={activeAccount}
+            setActiveAccount={setActiveAccount}
+            onAddAccount={handleAddAccount}
+            onDeleteAccount={handleDeleteAccount}
+          />
+        </Panel>
 
-      {/* PANEL KANAN (Ruang Obrolan / QR / Rule Engine) */}
-      <div className="flex-1 flex flex-col relative bg-wa-chatBg">
+        {/* Pembatas Sidebar */}
+        <Separator className="group flex items-center justify-center w-2 hover:w-3 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] transition-all cursor-col-resize z-30 border-r border-[#313d45]/30">
+          <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full transition-colors">
+            <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
+          </div>
+        </Separator>
+
+        {/* PANEL KANAN (Ruang Obrolan / QR / Rule Engine) */}
+        <Panel defaultSize={75} minSize={50}>
+          <div className="flex-1 flex flex-col relative bg-wa-chatBg h-full">
         
         {/* Latar Belakang Khas WA (Doodle) */}
         <div className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none" 
@@ -205,7 +215,11 @@ export default function App() {
             ) : (
               <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <div className="bg-[#202c33] border-b border-[#313d45] shadow-sm z-20 shrink-0">
-                  <RuleEngine onAddRule={handleAddRule} />
+                  <RuleEngine 
+                    rules={rules} 
+                    onAddRule={handleAddRule} 
+                    onDeleteRule={handleDeleteRule} 
+                  />
                 </div>
                 
                 <Group direction="horizontal" className="flex-1 w-full h-full relative">
@@ -248,28 +262,20 @@ export default function App() {
                 </Group>
               </div>
             )}
-
-
           </>
         ) : (
           // Layar Kosong (Belum Pilih Akun)
-          <div className="flex-1 flex flex-col items-center justify-center bg-wa-chatBg z-10 border-l border-wa-border">
-            <MonitorSmartphone size={160} strokeWidth={1} className="text-wa-textMuted mb-8 opacity-60" />
-            <h1 className="text-3xl text-white font-light mb-4 text-center mt-4">WhatsApp Desktop Clone</h1>
-            <p className="text-wa-textMuted text-sm text-center max-w-md leading-relaxed">
-              Kirim dan terima pesan tanpa perlu menjaga telepon Anda tetap online.<br/>
-              Pilih salah satu akun di samping untuk mengelola Notifikasi Filter.
+          <div className="flex-1 flex flex-col items-center justify-center bg-wa-chatBg z-10 border-l border-wa-border opacity-70">
+            <MonitorSmartphone size={100} strokeWidth={1} className="text-[#3b4a54] mb-6" />
+            <h2 className="text-2xl font-light text-[#e9edef] mb-2">WhatsApp Web Manager</h2>
+            <p className="text-[#8696a0] max-w-md text-center text-sm leading-relaxed">
+              Pilih akun dari daftar di sebelah kiri atau tambahkan akun baru untuk mulai memantau pesan dan menetapkan filter khusus.
             </p>
-            <div className="mt-10 flex items-center text-wa-textMuted text-xs">
-              <span className="bg-wa-textMuted w-3 h-3 rounded-full mr-2 opacity-50 flex items-center justify-center">
-                <span className="w-1.5 h-1.5 bg-wa-chatBg rounded-full"></span>
-              </span>
-              Enkripsi End-to-End diaktifkan oleh Baileys
-            </div>
           </div>
         )}
-      </div>
-
+          </div>
+        </Panel>
+      </Group>
     </div>
   );
 }
