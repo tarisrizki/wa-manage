@@ -263,7 +263,7 @@ export default function App() {
                 <>
                   {/* PANEL 2: OBROLAN GRUP */}
                   <Panel id="panel-group" defaultSize={37.5} minSize={20}>
-                    <div className="h-full flex flex-col bg-wa-chatBg">
+                    <div className="h-full flex flex-col bg-wa-chatBg overflow-hidden">
                       <ChatRoom 
                         title="🏢 Obrolan Grup"
                         messages={filteredMessages.filter(m => m.isGroup)} 
@@ -284,7 +284,7 @@ export default function App() {
 
                   {/* PANEL 3: PESAN PRIBADI */}
                   <Panel id="panel-private" defaultSize={37.5} minSize={20}>
-                    <div className="h-full flex flex-col bg-wa-chatBg border-l border-[#313d45]/30">
+                    <div className="h-full flex flex-col bg-wa-chatBg border-l border-[#313d45]/30 overflow-hidden">
                       <ChatRoom 
                         title="👤 Pesan Pribadi"
                         messages={filteredMessages.filter(m => !m.isGroup)} 
