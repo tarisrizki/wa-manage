@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
 import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings, GripVertical } from 'lucide-react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import bgDoodle from './assets/doodle.png';
-import { WhatsAppMessage } from './types';
+import { useWhatsAppAccounts } from './hooks/useWhatsAppAccounts';
+import { useWhatsAppMessages } from './hooks/useWhatsAppMessages';
 
 // Komponen Terpisah
 import { Sidebar } from './components/Sidebar';
@@ -11,204 +11,29 @@ import { QRScreen } from './components/QRScreen';
 import { RuleEngine } from './components/RuleEngine';
 
 export default function App() {
-  const [messages, setMessages] = useState<Record<string, WhatsAppMessage[]>>({});
-  const [qrs, setQrs] = useState<Record<string, string>>({});
-  const [savedAccounts, setSavedAccounts] = useState<string[]>([]);
-  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
-  
-  const [activeAccount, setActiveAccount] = useState<string | null>(null);
-  
-  // Rule Engine State
-  const [rules, setRules] = useState<{id: number, keyword: string}[]>([]);
+  const {
+    savedAccounts,
+    connectedAccounts,
+    activeAccount,
+    setActiveAccount,
+    qrs,
+    handleAddAccount,
+    handleDeleteAccount
+  } = useWhatsAppAccounts();
 
-  // Load awal
-  useEffect(() => {
-    window.api.getSavedAccounts()
-      .then(accounts => setSavedAccounts(accounts))
-      .catch(err => console.error("Gagal memuat akun yang tersimpan:", err));
+  const {
+    rules,
+    filteredMessages,
+    handleAddRule,
+    handleDeleteRule,
+    handleDeleteMessage,
+    handleClearMessages
+  } = useWhatsAppMessages(activeAccount);
 
-    const cleanupQR = window.api.onWhatsAppQR((data) => {
-      setQrs(prev => ({ ...prev, [data.accountId]: data.qr }));
-    });
-    
-    const cleanupMsg = window.api.onWhatsAppMessage((data: WhatsAppMessage) => {
-      setMessages(prev => {
-        const accMsgs = prev[data.accountId] || [];
-        const newAccMsgs = [...accMsgs, data];
-        
-        const allMsgs = prev['ALL'] || [];
-        const newAllMsgs = [...allMsgs, data];
-        
-        const next = { ...prev };
-        
-        // Simpan 200 pesan terakhir per akun
-        if (newAccMsgs.length > 200) {
-          next[data.accountId] = newAccMsgs.slice(newAccMsgs.length - 200);
-        } else {
-          next[data.accountId] = newAccMsgs;
-        }
-        
-        // Simpan 500 pesan terakhir untuk tab 'ALL'
-        if (newAllMsgs.length > 500) {
-          next['ALL'] = newAllMsgs.slice(newAllMsgs.length - 500);
-        } else {
-          next['ALL'] = newAllMsgs;
-        }
-
-        return next;
-      });
-    });
-
-    const cleanupConn = window.api.onWhatsAppConnected((data) => {
-      setConnectedAccounts(prev => Array.from(new Set([...prev, data.accountId])));
-      setQrs(prev => {
-        const newQrs = {...prev};
-        delete newQrs[data.accountId];
-        return newQrs;
-      });
-      setSavedAccounts(prev => Array.from(new Set([...prev, data.accountId])));
-    });
-
-    const unlistenLoggedOut = window.api.onWhatsAppLoggedOut((data: { accountId: string }) => {
-      setSavedAccounts(prev => prev.filter(a => a !== data.accountId));
-      setQrs(prev => {
-        const next = { ...prev };
-        delete next[data.accountId];
-        return next;
-      });
-      setConnectedAccounts(prev => prev.filter(acc => acc !== data.accountId));
-      setActiveAccount(prev => prev === data.accountId ? null : prev);
-    });
-
-    return () => {
-      cleanupQR();
-      cleanupMsg();
-      cleanupConn();
-      unlistenLoggedOut();
-    };
-  }, []);
-
-  // Load Rules saat akun berganti
-  useEffect(() => {
-    if (activeAccount) {
-      window.api.getRules(activeAccount)
-        .then(data => setRules(data))
-        .catch(err => console.error("Gagal memuat rules:", err));
-    }
-  }, [activeAccount]);
-
-  // Load Riwayat Pesan saat akun berganti
-  useEffect(() => {
-    if (activeAccount) {
-      window.api.getMessages(activeAccount)
-        .then(history => {
-          setMessages(prev => ({
-            ...prev,
-            [activeAccount]: history
-          }));
-        })
-        .catch(err => console.error("Gagal memuat riwayat pesan:", err));
-    }
-  }, [activeAccount]);
-
-  const handleAddAccount = (cleanId: string) => {
-    setSavedAccounts(prev => Array.from(new Set([...prev, cleanId])));
-    window.api.addWhatsAppAccount(cleanId);
-    setActiveAccount(cleanId);
-  };
-
-  const handleDeleteAccount = async (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    try {
-      await window.api.deleteAccount(id);
-      setSavedAccounts(prev => prev.filter(acc => acc !== id));
-      if (activeAccount === id) setActiveAccount(null);
-      setQrs(prev => { const n = {...prev}; delete n[id]; return n; });
-      setConnectedAccounts(prev => prev.filter(acc => acc !== id));
-    } catch (err) {
-      console.error("Gagal menghapus akun:", err);
-      alert("Gagal menghapus akun. Cek console log.");
-    }
-  };
-
-  const handleAddRule = async (keyword: string) => {
-    if (activeAccount) {
-      try {
-        await window.api.addRule(activeAccount, keyword);
-        const data = await window.api.getRules(activeAccount);
-        setRules(data);
-      } catch (err) {
-        console.error("Gagal menambah rule:", err);
-      }
-    }
-  };
-
-  const handleDeleteRule = async (id: number) => {
-    if (activeAccount) {
-      try {
-        await window.api.deleteRule(id);
-        const data = await window.api.getRules(activeAccount);
-        setRules(data);
-      } catch (err) {
-        console.error("Gagal menghapus rule:", err);
-      }
-    }
-  };
-
-  const filteredMessages = activeAccount ? (messages[activeAccount] || []).filter(msg => {
-    // Sesuai permintaan: Filter KHUSUS untuk Grup.
-    // Pesan pribadi (!msg.isGroup) selalu tampil semua tanpa difilter.
-    if (!msg.isGroup) return true;
-
-    if (!rules || rules.length === 0) return true;
-    
-    // Gunakan textContent yang sudah disediakan dari backend/database
-    const textLower = (msg.textContent || '').toLowerCase();
-    
-    return rules.some(rule => {
-      const kw = rule.keyword?.trim();
-      return kw && textLower.includes(kw.toLowerCase());
-    });
-  }) : [];
-  
   // Tab 'ALL' dianggap selalu terkoneksi asalkan ada minimal 1 akun yang terkoneksi
   const isActiveAccountConnected = activeAccount === 'ALL' 
     ? connectedAccounts.length > 0 
     : (activeAccount && connectedAccounts.includes(activeAccount));
-
-  const handleDeleteMessage = (msgKeyId: string) => {
-    if (!activeAccount) return;
-    
-    // Hapus dari state
-    setMessages(prev => {
-      const accMsgs = prev[activeAccount] || [];
-      return {
-        ...prev,
-        [activeAccount]: accMsgs.filter(m => m.msg?.key?.id !== msgKeyId)
-      };
-    });
-    
-    // Hapus dari SQLite (Backend)
-    window.api.deleteMessage(msgKeyId);
-  };
-  
-  const handleClearMessages = (isGroup: boolean) => {
-    if (!activeAccount) return;
-    
-    // Kosongkan state untuk akun ini (hanya tipe pesan yang diminta)
-    setMessages(prev => {
-      const accMsgs = prev[activeAccount] || [];
-      return {
-        ...prev,
-        [activeAccount]: accMsgs.filter(m => m.isGroup !== isGroup)
-      };
-    });
-    
-    // Kosongkan dari SQLite (Backend)
-    window.api.clearMessages(activeAccount, isGroup);
-  };
 
   return (
     <div className="flex flex-col h-screen w-full font-sans text-wa-textDark bg-wa-bg selection:bg-wa-green selection:text-white overflow-hidden">
