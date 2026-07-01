@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { ShieldCheck, Trash2, Trash } from 'lucide-react';
+import { ShieldCheck, Trash2, Trash, Users, User } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { WhatsAppMessage } from '../types';
 
 export interface ChatRoomProps {
@@ -24,10 +25,10 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto bg-transparent scrollbar-thin relative z-10 px-4 py-6 md:px-12 lg:px-20 flex flex-col space-y-2">
-      {/* Header/Banner */}
-        <div className="flex justify-center mb-6 sticky top-0 z-20">
-          <div className="bg-wa-panel px-4 py-2 rounded-xl shadow-sm border border-wa-border flex items-center justify-between w-full max-w-sm">
-            <span className="flex items-center text-xs text-wa-textMuted font-semibold">
+      {/* Header/Banner (Glassmorphism) */}
+        <div className="flex justify-center mb-6 sticky top-2 z-20">
+          <div className="bg-[#111b21]/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-white/5 flex items-center justify-between w-full max-w-sm">
+            <span className="flex items-center text-[13px] text-gray-300 font-semibold tracking-wide">
               {title ? (
                 <>
                   <span className="mr-2">{title.includes('Grup') ? '🏢' : '👤'}</span>
@@ -57,8 +58,16 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
         </div>
 
         {messages.length === 0 ? (
-          <div className="text-center mt-10 text-wa-textMuted text-sm">
-            Menunggu pesan masuk...
+          <div className="flex-1 flex flex-col items-center justify-center h-full opacity-60 select-none mt-20">
+            {title?.includes('Grup') ? (
+              <Users size={80} strokeWidth={1} className="text-gray-500 mb-6" />
+            ) : (
+              <User size={80} strokeWidth={1} className="text-gray-500 mb-6" />
+            )}
+            <h3 className="text-xl text-gray-300 font-light mb-2">Belum Ada Pesan</h3>
+            <p className="text-sm text-gray-500 text-center max-w-xs">
+              Pesan baru yang masuk akan otomatis muncul di sini.
+            </p>
           </div>
         ) : (
           messages.map((m, idx) => {
@@ -88,32 +97,40 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
             const isHighlighted = rules.some(r => r.is_active === 1 && m.textContent.toLowerCase().includes(r.keyword.toLowerCase()));
             
             return (
-              <div key={uniqueKey} className={`flex mb-0.5 w-full justify-start ${showTail ? 'mt-2' : ''}`}>
-                <div className={`p-1.5 px-2 pb-2 max-w-[65%] md:max-w-[75%] shadow-sm relative group ${showTail ? 'rounded-lg rounded-tl-none' : 'rounded-lg'} ${isHighlighted ? 'bg-emerald-900/40 border border-emerald-700/50' : 'bg-wa-panel'}`}>
-                  {/* Ekor Balon Chat */}
-                  {showTail && (
-                    <svg viewBox="0 0 8 13" height="13" width="8" className={`absolute top-0 -left-[8px] ${isHighlighted ? 'text-emerald-900/40' : 'text-wa-panel'}`}>
-                      <path opacity=".13" d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z"></path>
-                      <path fill="currentColor" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z"></path>
-                    </svg>
-                  )}
+              <motion.div 
+                key={uniqueKey}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className={`flex flex-col ${isHighlighted ? 'mt-4' : ''}`}
+              >
+                {/* Tail / Pemisah Grup Bubble */}
+                {showTail && (
+                  <div className="flex justify-center my-3">
+                    <span className="bg-[#182229] text-gray-400 text-[11px] font-medium px-3 py-1 rounded-full shadow-sm">
+                      {m.isGroup ? (m.groupName || 'Unknown Group') : 'Personal'} 
+                      <span className="mx-1.5">•</span> 
+                      {m.senderName || senderId?.split('@')[0] || 'Unknown'}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Bubble Pesan */}
+                <div className={`relative max-w-[85%] rounded-2xl p-2 pl-3 shadow-sm ${
+                  isHighlighted 
+                    ? 'bg-[#005c4b] text-white border border-[#00a884]/40 ring-1 ring-[#00a884]/20' 
+                    : 'bg-wa-panel text-[#e9edef] border border-transparent'
+                } group transition-all duration-300 hover:shadow-md ${
+                  showTail ? 'rounded-tl-md' : 'mt-1'
+                }`}>
                   
-                  {showTail && (
-                    <div className="flex justify-between items-center mb-0.5 pr-2">
-                      <span className="text-[#e9edef] text-[13px] font-semibold leading-5 text-emerald-500">
-                        {m.isGroup ? (
-                          <span className="flex items-center">
-                            <span className="text-gray-400 font-normal truncate max-w-[150px]">
-                              {m.groupName || 'Unknown Group'}
-                            </span>
-                            <span className="text-gray-500 mx-1">›</span>
-                            <span className="truncate max-w-[120px]">
-                              {m.senderName || senderId?.split('@')[0] || 'Unknown'}
-                            </span>
-                          </span>
-                        ) : (
-                          <span>{m.senderName || senderId?.split('@')[0] || 'Unknown'}</span>
-                        )}
+                  {/* Sender Name in Group */}
+                  {m.isGroup && showTail && (
+                    <div className="flex items-center justify-between mb-1 pr-2">
+                      <span className="text-[#53bdeb] text-[13px] font-semibold tracking-tight">
+                        <span className="truncate max-w-[120px]">
+                          {m.senderName || senderId?.split('@')[0] || 'Unknown'}
+                        </span>
                       </span>
                       {/* Delete Icon (muncul saat hover) */}
                       {onDeleteMessage && m.msg?.key?.id && (
@@ -125,20 +142,22 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
                           <Trash2 size={13} />
                         </button>
                       )}
-                      <span className="text-[10px] text-wa-textMuted ml-4">{m.isGroup ? 'Group' : 'Personal'}</span>
+                      <span className="text-[10px] text-gray-500 ml-4 font-medium">{m.isGroup ? 'Group' : 'Personal'}</span>
                     </div>
                   )}
                   
+                  {/* Teks Pesan */}
                   <div className="text-[#e9edef] text-[14.2px] leading-5 whitespace-pre-wrap break-words pr-12">
                     {m.textContent}
                   </div>
                 
-                <div className="absolute right-2 bottom-1 text-[11px] text-wa-textMuted">
-                  {timeString}
+                  {/* Waktu */}
+                  <div className="absolute right-3 bottom-1.5 text-[10px] text-gray-400 font-medium">
+                    {timeString}
+                  </div>
                 </div>
-              </div>
-            </div>
-          )
+              </motion.div>
+            )
         })
       )}
 

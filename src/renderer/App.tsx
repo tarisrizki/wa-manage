@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings } from 'lucide-react';
+import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings, GripVertical } from 'lucide-react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import bgDoodle from './assets/doodle.png';
 import { WhatsAppMessage } from './types';
@@ -225,7 +225,11 @@ export default function App() {
                   </Panel>
 
                   {/* Pembatas Fleksibel (Resize Handle) */}
-                  <Separator className="w-1.5 bg-[#202c33] hover:bg-[#3b4a54] active:bg-[#00a884] transition-colors cursor-col-resize z-30" />
+                  <Separator className="group flex items-center justify-center w-2 hover:w-3 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] transition-all cursor-col-resize z-30">
+                    <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full transition-colors">
+                      <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
+                    </div>
+                  </Separator>
 
                   {/* Panel Kanan: Pribadi */}
                   <Panel defaultSize={50} minSize={20}>
