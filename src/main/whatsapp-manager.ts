@@ -135,9 +135,13 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
           console.log(`[${accountId}] Sesi kedaluwarsa dibersihkan secara otomatis.`);
         }
 
-        // 2. [BUG FIX] Hapus dari Database SQLite agar tidak me-load hantu saat restart
+        // 2. [BUG FIX] Hapus dari Database SQLite secara menyeluruh agar tidak me-load hantu/zombie data saat restart
         try {
           const db = getDatabase();
+          db.prepare('DELETE FROM notification_rules WHERE account_id = ?').run(accountId);
+          db.prepare('DELETE FROM messages WHERE account_id = ?').run(accountId);
+          db.prepare('DELETE FROM chats WHERE account_id = ?').run(accountId);
+          db.prepare('DELETE FROM contacts WHERE account_id = ?').run(accountId);
           db.prepare('DELETE FROM accounts WHERE account_id = ?').run(accountId);
         } catch (e) {
           console.error(`Gagal menghapus zombie record dari DB untuk ${accountId}`, e);
@@ -168,6 +172,9 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
   sock.ev.on('messages.upsert', async (m) => {
     const msg = m.messages[0];
     if (!msg || !msg.key || !msg.key.remoteJid) return; // Pengaman untuk sistem broadcast/status
+
+    // [BUG FIX] Abaikan pesan status WhatsApp agar tidak masuk ke inbox personal
+    if (msg.key.remoteJid === 'status@broadcast') return;
 
     if (!msg.key.fromMe && m.type === 'notify') {
       const remoteJid = msg.key.remoteJid;
@@ -300,7 +307,8 @@ export function deleteWhatsAppAccount(accountId: string) {
     if (activeSockets[accountId]) {
       try {
         activeSockets[accountId].ev.removeAllListeners();
-        activeSockets[accountId].ws.close();
+        // [BUG FIX] Penutupan yang benar untuk Baileys Socket
+        activeSockets[accountId].end(undefined);
       } catch (e) {}
       delete activeSockets[accountId];
     }
@@ -322,7 +330,8 @@ export function cleanupWhatsAppManager() {
     if (activeSockets[accountId]) {
       try {
         activeSockets[accountId].ev.removeAllListeners();
-        activeSockets[accountId].ws.close();
+        // [BUG FIX] Penutupan yang benar untuk Baileys Socket
+        activeSockets[accountId].end(undefined);
       } catch (e) {}
     }
   }
