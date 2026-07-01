@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Search, MoreVertical, Smartphone, MonitorSmartphone } from 'lucide-react';
+import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings } from 'lucide-react';
+import { Group, Panel, Separator } from 'react-resizable-panels';
 import bgDoodle from './assets/doodle.png';
 import { WhatsAppMessage } from './types';
 
@@ -206,14 +207,41 @@ export default function App() {
                 <div className="bg-[#202c33] border-b border-[#313d45] shadow-sm z-20 shrink-0">
                   <RuleEngine onAddRule={handleAddRule} />
                 </div>
-                <ChatRoom 
-                  messages={filteredMessages} 
-                  activeAccount={activeAccount}
-                  rules={rules}
-                  onDeleteRule={handleDeleteRule}
-                  onDeleteMessage={handleDeleteMessage}
-                  onClearMessages={handleClearMessages}
-                />
+                
+                <Group direction="horizontal" className="flex-1 w-full h-full relative">
+                  {/* Panel Kiri: Grup */}
+                  <Panel defaultSize={50} minSize={20}>
+                    <div className="h-full flex flex-col bg-wa-chatBg">
+                      <ChatRoom 
+                        title="🏢 Obrolan Grup"
+                        messages={filteredMessages.filter(m => m.isGroup)} 
+                        activeAccount={activeAccount}
+                        rules={rules}
+                        onDeleteRule={handleDeleteRule}
+                        onDeleteMessage={handleDeleteMessage}
+                        onClearMessages={handleClearMessages}
+                      />
+                    </div>
+                  </Panel>
+
+                  {/* Pembatas Fleksibel (Resize Handle) */}
+                  <Separator className="w-1.5 bg-[#202c33] hover:bg-[#3b4a54] active:bg-[#00a884] transition-colors cursor-col-resize z-30" />
+
+                  {/* Panel Kanan: Pribadi */}
+                  <Panel defaultSize={50} minSize={20}>
+                    <div className="h-full flex flex-col bg-wa-chatBg border-l border-[#313d45]/30">
+                      <ChatRoom 
+                        title="👤 Pesan Pribadi"
+                        messages={filteredMessages.filter(m => !m.isGroup)} 
+                        activeAccount={activeAccount}
+                        rules={rules}
+                        onDeleteRule={handleDeleteRule}
+                        onDeleteMessage={handleDeleteMessage}
+                        onClearMessages={handleClearMessages}
+                      />
+                    </div>
+                  </Panel>
+                </Group>
               </div>
             )}
 

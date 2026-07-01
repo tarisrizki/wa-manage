@@ -3,6 +3,7 @@ import { ShieldCheck, Trash2, Trash } from 'lucide-react';
 import { WhatsAppMessage } from '../types';
 
 export interface ChatRoomProps {
+  title?: string;
   messages: WhatsAppMessage[];
   activeAccount: string;
   rules: {id: number, keyword: string}[];
@@ -11,7 +12,7 @@ export interface ChatRoomProps {
   onClearMessages?: () => void;
 }
 
-export function ChatRoom({ messages, activeAccount, rules, onDeleteRule, onDeleteMessage, onClearMessages }: ChatRoomProps) {
+export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, onDeleteMessage, onClearMessages }: ChatRoomProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll ke bawah hanya ketika messages untuk akun ini bertambah
@@ -23,12 +24,21 @@ export function ChatRoom({ messages, activeAccount, rules, onDeleteRule, onDelet
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto bg-transparent scrollbar-thin relative z-10 px-4 py-6 md:px-12 lg:px-20 flex flex-col space-y-2">
-      {/* Banner E2E */}
-        <div className="flex justify-center mb-6">
+      {/* Header/Banner */}
+        <div className="flex justify-center mb-6 sticky top-0 z-20">
           <div className="bg-wa-panel px-4 py-2 rounded-xl shadow-sm border border-wa-border flex items-center justify-between w-full max-w-sm">
             <span className="flex items-center text-xs text-wa-textMuted font-semibold">
-              <ShieldCheck size={14} className="mr-2 text-wa-textMuted" />
-              PESAN TERENKRIPSI SECARA END-TO-END
+              {title ? (
+                <>
+                  <span className="mr-2">{title.includes('Grup') ? '🏢' : '👤'}</span>
+                  {title.toUpperCase()}
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={14} className="mr-2 text-wa-textMuted" />
+                  PESAN TERENKRIPSI SECARA END-TO-END
+                </>
+              )}
             </span>
             {messages.length > 0 && onClearMessages && (
               <button 
@@ -132,21 +142,8 @@ export function ChatRoom({ messages, activeAccount, rules, onDeleteRule, onDelet
         })
       )}
 
-      {/* Aturan Kata Kunci Ditampilkan di Atas Input */}
-      {rules.length > 0 && (
-        <div className="mt-8 mb-2">
-          <div className="flex flex-wrap gap-2">
-            {rules.map(r => (
-              <div key={r.id} className="bg-wa-hover text-wa-textDark text-xs pl-3 pr-1 py-1 rounded-full flex items-center shadow-sm border border-wa-panel">
-                <span>{r.keyword}</span>
-                <button onClick={() => onDeleteRule && onDeleteRule(r.id)} className="ml-2 p-1 hover:bg-[#3b4a54] rounded-full text-wa-textMuted hover:text-wa-danger">
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Spacer to avoid bottom cutoff */}
+      <div className="h-4"></div>
     </div>
   );
 }
