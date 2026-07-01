@@ -230,7 +230,7 @@ export default function App() {
       <div className="flex-1 w-full relative z-10 flex">
         <Group orientation="horizontal" className="w-full h-full">
           {/* PANEL 1: DAFTAR AKUN (Sidebar) */}
-          <Panel id="panel-sidebar" defaultSize={25} minSize={15} maxSize={40}>
+          <Panel id="panel-sidebar" defaultSize={25} minSize={15}>
             <div className="h-full bg-wa-bg border-r border-[#313d45]/30">
               <Sidebar 
                 savedAccounts={savedAccounts}
