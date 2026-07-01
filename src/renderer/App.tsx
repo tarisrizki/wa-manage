@@ -187,71 +187,82 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full font-sans text-wa-textDark bg-wa-bg selection:bg-wa-green selection:text-white">
-      <Group orientation="horizontal" className="w-full h-full">
-        {/* PANEL KIRI (Daftar Akun) */}
-        <Panel defaultSize={25} minSize={20} maxSize={40}>
-          <Sidebar 
-            savedAccounts={savedAccounts}
-            connectedAccounts={connectedAccounts}
-            qrs={qrs}
-            activeAccount={activeAccount}
-            setActiveAccount={setActiveAccount}
-            onAddAccount={handleAddAccount}
-            onDeleteAccount={handleDeleteAccount}
-          />
-        </Panel>
+    <div className="flex flex-col h-screen w-full font-sans text-wa-textDark bg-wa-bg selection:bg-wa-green selection:text-white overflow-hidden">
+      
+      {/* Latar Belakang Khas WA (Doodle) */}
+      <div className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none" 
+           style={{ backgroundImage: `url(${bgDoodle})`, backgroundRepeat: 'repeat' }}>
+      </div>
 
-        {/* Pembatas Sidebar */}
-        <Separator className="group flex items-center justify-center w-2 hover:w-3 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] transition-all cursor-col-resize z-30 border-r border-[#313d45]/30">
-          <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full transition-colors">
-            <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
-          </div>
-        </Separator>
-
-        {/* PANEL KANAN (Ruang Obrolan / QR / Rule Engine) */}
-        <Panel defaultSize={75} minSize={50}>
-          <div className="flex-1 flex flex-col relative bg-wa-chatBg h-full">
-        
-        {/* Latar Belakang Khas WA (Doodle) */}
-        <div className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none" 
-             style={{ backgroundImage: `url(${bgDoodle})`, backgroundRepeat: 'repeat' }}>
-        </div>
-
-        {activeAccount ? (
-          <>
-            {/* Header Kanan */}
-            <div className="h-[60px] bg-wa-panel flex items-center px-4 py-2 shrink-0 z-10 border-l border-wa-border">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center mr-4">
-                <Smartphone className="text-slate-300" size={20} />
-              </div>
-              <div className="flex-1 flex flex-col">
-                <span className="text-white text-base">{activeAccount}</span>
-                <span className="text-xs text-wa-textMuted">
-                  {isActiveAccountConnected ? 'Online' : 'Membutuhkan tindakan'}
-                </span>
-              </div>
-              <div className="flex items-center space-x-4 text-[#aebac1]">
-                <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><Search size={20} /></button>
-                <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><MoreVertical size={20} /></button>
-              </div>
+      {activeAccount && (
+        <div className="flex flex-col z-10 shrink-0">
+          {/* Header Utama (membentang penuh) */}
+          <div className="h-[60px] bg-wa-panel flex items-center px-4 py-2 border-b border-wa-border">
+            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center mr-4">
+              <Smartphone className="text-slate-300" size={20} />
             </div>
+            <div className="flex-1 flex flex-col">
+              <span className="text-white text-base font-medium">{activeAccount}</span>
+              <span className="text-xs text-wa-textMuted">
+                {isActiveAccountConnected ? 'Online' : 'Membutuhkan tindakan'}
+              </span>
+            </div>
+            <div className="flex items-center space-x-4 text-[#aebac1]">
+              <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><Search size={20} /></button>
+              <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><MoreVertical size={20} /></button>
+            </div>
+          </div>
 
-            {!isActiveAccountConnected ? (
-              <QRScreen qr={qrs[activeAccount]} />
-            ) : (
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="bg-[#202c33] border-b border-[#313d45] shadow-sm z-20 shrink-0">
-                  <RuleEngine 
-                    rules={rules} 
-                    onAddRule={handleAddRule} 
-                    onDeleteRule={handleDeleteRule} 
-                  />
-                </div>
-                
-                <Group id="main-group" orientation="horizontal" className="flex-1 w-full h-full relative">
-                  {/* Panel Kiri: Grup */}
-                  <Panel id="panel-left" defaultSize={50} minSize={20}>
+          {/* Rule Engine / Filter (membentang penuh) */}
+          {isActiveAccountConnected && (
+            <div className="bg-[#202c33] border-b border-[#313d45] shadow-sm">
+              <RuleEngine 
+                rules={rules} 
+                onAddRule={handleAddRule} 
+                onDeleteRule={handleDeleteRule} 
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Kontainer Utama dengan 1 Group untuk 3 Panel */}
+      <div className="flex-1 w-full relative z-10 flex">
+        <Group orientation="horizontal" className="w-full h-full">
+          {/* PANEL 1: DAFTAR AKUN (Sidebar) */}
+          <Panel id="panel-sidebar" defaultSize={25} minSize={15} maxSize={40}>
+            <div className="h-full bg-wa-bg border-r border-[#313d45]/30">
+              <Sidebar 
+                savedAccounts={savedAccounts}
+                connectedAccounts={connectedAccounts}
+                qrs={qrs}
+                activeAccount={activeAccount}
+                setActiveAccount={setActiveAccount}
+                onAddAccount={handleAddAccount}
+                onDeleteAccount={handleDeleteAccount}
+              />
+            </div>
+          </Panel>
+
+          <Separator id="sep-sidebar" className="group flex items-center justify-center w-2 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] cursor-col-resize z-30">
+            <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full">
+              <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
+            </div>
+          </Separator>
+
+          {/* Sisa Area: Chat atau QR */}
+          {activeAccount ? (
+            <>
+              {!isActiveAccountConnected ? (
+                <Panel id="panel-qr" defaultSize={75} minSize={40}>
+                  <div className="h-full w-full bg-wa-chatBg flex items-center justify-center">
+                    <QRScreen qr={qrs[activeAccount]} />
+                  </div>
+                </Panel>
+              ) : (
+                <>
+                  {/* PANEL 2: OBROLAN GRUP */}
+                  <Panel id="panel-group" defaultSize={37.5} minSize={20}>
                     <div className="h-full flex flex-col bg-wa-chatBg">
                       <ChatRoom 
                         title="🏢 Obrolan Grup"
@@ -265,15 +276,14 @@ export default function App() {
                     </div>
                   </Panel>
 
-                  {/* Pembatas Fleksibel (Resize Handle) */}
-                  <Separator id="main-separator" className="group flex items-center justify-center w-2 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] cursor-col-resize z-30">
+                  <Separator id="sep-main" className="group flex items-center justify-center w-2 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] cursor-col-resize z-30">
                     <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full">
                       <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
                     </div>
                   </Separator>
 
-                  {/* Panel Kanan: Pribadi */}
-                  <Panel id="panel-right" defaultSize={50} minSize={20}>
+                  {/* PANEL 3: PESAN PRIBADI */}
+                  <Panel id="panel-private" defaultSize={37.5} minSize={20}>
                     <div className="h-full flex flex-col bg-wa-chatBg border-l border-[#313d45]/30">
                       <ChatRoom 
                         title="👤 Pesan Pribadi"
@@ -286,23 +296,20 @@ export default function App() {
                       />
                     </div>
                   </Panel>
-                </Group>
+                </>
+              )}
+            </>
+          ) : (
+            <Panel id="panel-empty" defaultSize={75} minSize={40}>
+              <div className="h-full w-full bg-wa-chatBg flex flex-col items-center justify-center text-[#8696a0]">
+                <MonitorSmartphone size={80} className="mb-6 text-[#41525d] font-light" />
+                <h1 className="text-3xl font-light text-[#e9edef] mb-4">WhatsApp Web Manager</h1>
+                <p className="text-sm">Pilih akun dari daftar di sebelah kiri untuk mulai mengelola.</p>
               </div>
-            )}
-          </>
-        ) : (
-          // Layar Kosong (Belum Pilih Akun)
-          <div className="flex-1 flex flex-col items-center justify-center bg-wa-chatBg z-10 border-l border-wa-border opacity-70">
-            <MonitorSmartphone size={100} strokeWidth={1} className="text-[#3b4a54] mb-6" />
-            <h2 className="text-2xl font-light text-[#e9edef] mb-2">WhatsApp Web Manager</h2>
-            <p className="text-[#8696a0] max-w-md text-center text-sm leading-relaxed">
-              Pilih akun dari daftar di sebelah kiri atau tambahkan akun baru untuk mulai memantau pesan dan menetapkan filter khusus.
-            </p>
-          </div>
-        )}
-          </div>
-        </Panel>
-      </Group>
+            </Panel>
+          )}
+        </Group>
+      </div>
     </div>
   );
 }
