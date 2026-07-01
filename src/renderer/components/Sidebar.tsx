@@ -106,10 +106,10 @@ export function Sidebar({
               <div className="w-[50px] h-[50px] rounded-full bg-slate-700 mr-3 flex-shrink-0 overflow-hidden flex items-center justify-center">
                 <Smartphone className="text-slate-400" size={24} />
               </div>
-              <div className="flex-1 border-b border-wa-border h-full flex flex-col justify-center pr-2">
+              <div className="flex-1 border-b border-wa-border h-full flex flex-col justify-center pr-2 min-w-0">
                 <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-white text-[17px] font-normal truncate">{accId}</span>
-                  <div className="flex items-center space-x-2">
+                  <span className="text-white text-[17px] font-normal truncate mr-2">{accId}</span>
+                  <div className="flex items-center space-x-2 shrink-0">
                     <span className={`text-xs ${isConnected ? 'text-wa-green' : 'text-wa-textMuted'}`}>
                       {isConnected ? 'Online' : hasQR ? 'Scan QR' : 'Connecting'}
                     </span>
