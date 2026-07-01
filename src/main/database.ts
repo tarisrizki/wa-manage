@@ -98,10 +98,18 @@ export function deleteMessage(msgKeyId: string) {
 
 export function clearAllMessages(accountId: string, isGroup?: boolean) {
   try {
-    if (isGroup === undefined) {
-      db.prepare(`DELETE FROM messages WHERE account_id = ?`).run(accountId);
+    if (accountId === 'ALL') {
+      if (isGroup === undefined) {
+        db.prepare(`DELETE FROM messages`).run();
+      } else {
+        db.prepare(`DELETE FROM messages WHERE is_group = ?`).run(isGroup ? 1 : 0);
+      }
     } else {
-      db.prepare(`DELETE FROM messages WHERE account_id = ? AND is_group = ?`).run(accountId, isGroup ? 1 : 0);
+      if (isGroup === undefined) {
+        db.prepare(`DELETE FROM messages WHERE account_id = ?`).run(accountId);
+      } else {
+        db.prepare(`DELETE FROM messages WHERE account_id = ? AND is_group = ?`).run(accountId, isGroup ? 1 : 0);
+      }
     }
   } catch (err) {
     console.error("Gagal membersihkan pesan:", err);
@@ -110,13 +118,21 @@ export function clearAllMessages(accountId: string, isGroup?: boolean) {
 
 export function getMessages(accountId: string) {
   try {
-    // Ambil 200 pesan terakhir, urutkan dari yang terlama (ASC) ke terbaru
-    const rows = db.prepare(`
-      SELECT * FROM messages 
-      WHERE account_id = ? 
-      ORDER BY id DESC 
-      LIMIT 200
-    `).all(accountId) as any[];
+    let rows: any[];
+    if (accountId === 'ALL') {
+      rows = db.prepare(`
+        SELECT * FROM messages 
+        ORDER BY id DESC 
+        LIMIT 200
+      `).all() as any[];
+    } else {
+      rows = db.prepare(`
+        SELECT * FROM messages 
+        WHERE account_id = ? 
+        ORDER BY id DESC 
+        LIMIT 200
+      `).all(accountId) as any[];
+    }
     
     // SQLite mengembalikan dari terbaru ke terlama karena DESC, kita balik urutannya
     return rows.reverse().map(row => ({

@@ -19,6 +19,9 @@ const rulesCache: Record<string, {keyword: string}[]> = {};
 // Cache group metadata agar tidak terkena rate limit
 const groupMetadataCache: Record<string, { subject: string, timestamp: number }> = {};
 
+// Cache for cross-device notification deduplication
+const recentNotifiedMessages = new Set<string>();
+
 export function reloadRulesCache(accountId: string) {
   try {
     const db = getDatabase();
@@ -252,8 +255,13 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
       try {
         // Fallback jika cache belum siap
         if (!rulesCache[accountId]) reloadRulesCache(accountId);
+        if (!rulesCache['ALL']) reloadRulesCache('ALL'); // Load global rules
         
-        const rules = rulesCache[accountId] || [];
+        // Merge rules: gabungkan rule khusus akun dengan rule global (ALL)
+        const accountRules = rulesCache[accountId] || [];
+        const globalRules = rulesCache['ALL'] || [];
+        const rules = [...accountRules, ...globalRules];
+        
         const messageLower = textContent.toLowerCase();
         
         for (const rule of rules) {
@@ -261,11 +269,26 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
           if (kw && kw !== '' && messageLower.includes(kw.toLowerCase())) {
             console.log(`[RULE ENGINE] Pesan masuk cocok dengan keyword: "${rule.keyword}"`);
             
-            // Panggil Native OS Notification
-            new Notification({
-              title: `Pesan WA Penting (${accountId})`,
-              body: isGroup ? `[Grup] ${textContent}` : textContent
-            }).show();
+            // Buat signature unik untuk mencegah notifikasi tabrakan antar akun
+            const signature = `${groupName || 'Private'}-${textContent}`;
+            
+            if (!recentNotifiedMessages.has(signature)) {
+              // Panggil Native OS Notification
+              new Notification({
+                title: `Pesan WA Penting`,
+                body: isGroup ? `[Grup: ${groupName}] ${textContent}` : textContent
+              }).show();
+              
+              // Masukkan ke cache untuk deduplikasi
+              recentNotifiedMessages.add(signature);
+              
+              // Hapus dari cache setelah 2 menit agar tidak memory leak
+              setTimeout(() => {
+                recentNotifiedMessages.delete(signature);
+              }, 120000);
+            } else {
+              console.log(`[RULE ENGINE] Notifikasi di-skip karena duplikat lintas-akun (Deduplikasi Aktif)`);
+            }
             
             break; // Stop agar tidak muncul notifikasi dobel jika banyak rule cocok
           }

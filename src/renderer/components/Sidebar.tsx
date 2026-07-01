@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, MoreVertical, Search, Filter, Trash2, Smartphone, Monitor } from 'lucide-react';
+import { Plus, MoreVertical, Search, Filter, Trash2, Smartphone, Monitor, Inbox } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -92,6 +92,26 @@ export function Sidebar({
 
       {/* Chat List (Daftar Akun) */}
       <div className="flex-1 overflow-y-auto bg-wa-bg scrollbar-thin">
+        {/* Item "Semua Akun" */}
+        {savedAccounts.length > 0 && (
+          <div 
+            onClick={() => setActiveAccount('ALL')}
+            className={`flex items-center px-3 h-[72px] cursor-pointer hover:bg-wa-panel transition-colors ${activeAccount === 'ALL' ? 'bg-wa-hover' : ''}`}
+          >
+            <div className="w-[50px] h-[50px] rounded-full bg-[#00a884] mr-3 flex-shrink-0 overflow-hidden flex items-center justify-center">
+              <Inbox className="text-white" size={24} />
+            </div>
+            <div className="flex-1 border-b border-wa-border h-full flex flex-col justify-center pr-2 min-w-0">
+              <div className="flex justify-between items-center mb-0.5">
+                <span className="text-white text-[17px] font-semibold truncate mr-2">Semua Akun</span>
+              </div>
+              <div className="flex items-center text-sm text-wa-textMuted">
+                <span className="truncate">Tampilkan pesan dari seluruh perangkat.</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {savedAccounts.map((accId) => {
           const isConnected = connectedAccounts.includes(accId);
           const hasQR = !!qrs[accId];

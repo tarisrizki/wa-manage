@@ -78,8 +78,10 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
             const prevRemoteJid = prevMsg?.msg?.key?.remoteJid;
             const prevSenderId = prevMsg ? (prevMsg.isGroup ? (prevMsg.msg?.key?.participant || prevRemoteJid) : prevRemoteJid) : null;
             
-            // Ekor chat ditampilkan jika pesan sebelumnya berasal dari orang yang berbeda ATAU dari chat/grup yang berbeda
-            const showTail = (senderId !== prevSenderId) || (remoteJid !== prevRemoteJid);
+            const prevAccountId = idx > 0 ? messages[idx - 1].accountId : null;
+            
+            // Ekor chat ditampilkan jika pesan sebelumnya berasal dari orang yang berbeda, grup yang berbeda, ATAU akun yang berbeda
+            const showTail = (senderId !== prevSenderId) || (remoteJid !== prevRemoteJid) || (m.accountId !== prevAccountId);
             
             // Memperbaiki Timestamp Bug (Menggunakan waktu asli dari pesan jika ada, fallback ke Date.now)
             let timeString = '';
@@ -110,10 +112,16 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
                 {/* Tail / Pemisah Grup Bubble */}
                 {showTail && (
                   <div className="flex justify-center my-3">
-                    <span className="bg-[#182229] text-gray-400 text-[11px] font-medium px-3 py-1 rounded-full shadow-sm">
+                    <span className="bg-[#182229] text-gray-400 text-[11px] font-medium px-3 py-1 rounded-full shadow-sm flex items-center">
                       {m.isGroup ? (m.groupName || 'Unknown Group') : 'Personal'} 
                       <span className="mx-1.5">•</span> 
-                      {m.senderName || senderId?.split('@')[0] || 'Unknown'}
+                      <span className="truncate max-w-[150px]">{m.senderName || senderId?.split('@')[0] || 'Unknown'}</span>
+                      {activeAccount === 'ALL' && (
+                        <>
+                          <span className="mx-1.5">•</span>
+                          <span className="text-[#00a884] uppercase tracking-wider font-bold">Via {m.accountId}</span>
+                        </>
+                      )}
                     </span>
                   </div>
                 )}

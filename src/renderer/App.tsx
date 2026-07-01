@@ -35,11 +35,27 @@ export default function App() {
       setMessages(prev => {
         const accMsgs = prev[data.accountId] || [];
         const newAccMsgs = [...accMsgs, data];
-        // Hanya simpan 200 pesan terakhir per akun
+        
+        const allMsgs = prev['ALL'] || [];
+        const newAllMsgs = [...allMsgs, data];
+        
+        const next = { ...prev };
+        
+        // Simpan 200 pesan terakhir per akun
         if (newAccMsgs.length > 200) {
-          return { ...prev, [data.accountId]: newAccMsgs.slice(newAccMsgs.length - 200) };
+          next[data.accountId] = newAccMsgs.slice(newAccMsgs.length - 200);
+        } else {
+          next[data.accountId] = newAccMsgs;
         }
-        return { ...prev, [data.accountId]: newAccMsgs };
+        
+        // Simpan 500 pesan terakhir untuk tab 'ALL'
+        if (newAllMsgs.length > 500) {
+          next['ALL'] = newAllMsgs.slice(newAllMsgs.length - 500);
+        } else {
+          next['ALL'] = newAllMsgs;
+        }
+
+        return next;
       });
     });
 
@@ -156,7 +172,11 @@ export default function App() {
       return kw && textLower.includes(kw.toLowerCase());
     });
   }) : [];
-  const isActiveAccountConnected = activeAccount && connectedAccounts.includes(activeAccount);
+  
+  // Tab 'ALL' dianggap selalu terkoneksi asalkan ada minimal 1 akun yang terkoneksi
+  const isActiveAccountConnected = activeAccount === 'ALL' 
+    ? connectedAccounts.length > 0 
+    : (activeAccount && connectedAccounts.includes(activeAccount));
 
   const handleDeleteMessage = (msgKeyId: string) => {
     if (!activeAccount) return;
