@@ -49,8 +49,10 @@
   "build": {
     "appId": "com.wamanage.desktop",
     "files": [
-      "dist/**/*"
+      "dist/**/*",
+      "assets/**/*"
     ],
+    "icon": "assets/icon.png",
     "directories": {
       "buildResources": "assets",
       "output": "release"
