@@ -1,7 +1,8 @@
 import { app, BrowserWindow, ipcMain, Notification } from 'electron';
 import * as path from 'path';
-import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount, reloadRulesCache } from './whatsapp-manager';
-import { initDatabase, getDatabase } from './database';
+import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount } from './whatsapp-manager';
+import { reloadRulesCache } from './wa-rule-engine';
+import { initDatabase, getDatabase, deleteMessage, clearAllMessages, getMessages } from './database';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -130,7 +131,6 @@ ipcMain.handle('delete-rule', (event, id) => {
     
     // Reload rules cache jika rule ditemukan
     if (rule) {
-      const { reloadRulesCache } = require('./whatsapp-manager');
       reloadRulesCache(rule.account_id);
     }
     
@@ -143,17 +143,14 @@ ipcMain.handle('delete-rule', (event, id) => {
 
 // Endpoint untuk Menghapus Pesan
 ipcMain.on('delete-message', (event, msgKeyId: string) => {
-  const { deleteMessage } = require('./database');
   deleteMessage(msgKeyId);
 });
 
 ipcMain.on('clear-messages', (event, accountId: string, isGroup?: boolean) => {
-  const { clearAllMessages } = require('./database');
   clearAllMessages(accountId, isGroup);
 });
 
 // [FITUR BARU] Endpoint untuk memuat riwayat obrolan
-ipcMain.handle('get-messages', (event, accountId: string) => {
-  const { getMessages } = require('./database');
-  return getMessages(accountId);
+ipcMain.handle('get-messages', (event, accountId: string, offset?: number) => {
+  return getMessages(accountId, offset || 0);
 });

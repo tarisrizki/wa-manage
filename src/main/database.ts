@@ -116,22 +116,22 @@ export function clearAllMessages(accountId: string, isGroup?: boolean) {
   }
 }
 
-export function getMessages(accountId: string) {
+export function getMessages(accountId: string, offset: number = 0) {
   try {
     let rows: any[];
     if (accountId === 'ALL') {
       rows = db.prepare(`
         SELECT * FROM messages 
         ORDER BY id DESC 
-        LIMIT 200
-      `).all() as any[];
+        LIMIT 200 OFFSET ?
+      `).all(offset) as any[];
     } else {
       rows = db.prepare(`
         SELECT * FROM messages 
         WHERE account_id = ? 
         ORDER BY id DESC 
-        LIMIT 200
-      `).all(accountId) as any[];
+        LIMIT 200 OFFSET ?
+      `).all(accountId, offset) as any[];
     }
     
     // SQLite mengembalikan dari terbaru ke terlama karena DESC, kita balik urutannya

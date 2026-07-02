@@ -13,7 +13,7 @@ declare global {
       addRule: (accountId: string, keyword: string) => Promise<boolean>;
       deleteRule: (id: number) => Promise<boolean>;
       deleteAccount: (accountId: string) => Promise<boolean>;
-      getMessages: (accountId: string) => Promise<any[]>;
+      getMessages: (accountId: string, offset?: number) => Promise<any[]>;
       deleteMessage: (msgKeyId: string) => void;
       clearMessages: (accountId: string, isGroup?: boolean) => void;
       onWhatsAppMessage: (callback: (data: any) => void) => () => void;

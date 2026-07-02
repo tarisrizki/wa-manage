@@ -1,9 +1,11 @@
-import makeWASocket, { useMultiFileAuthState, DisconnectReason, Browsers, fetchLatestWaWebVersion } from '@whiskeysockets/baileys';
+import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import { app, BrowserWindow, Notification } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { getDatabase } from './database';
+import { reloadRulesCache, rulesCache, clearRulesCache } from './wa-rule-engine';
+import { handleIncomingMessage } from './wa-message-handler';
 
 // Menyimpan banyak socket WhatsApp dalam satu object, memungkinan multi-akun yang tak terbatas.
 const activeSockets: Record<string, any> = {};
@@ -13,23 +15,10 @@ const deletedAccounts: Set<string> = new Set();
 // Melacak jumlah kegagalan koneksi untuk perhitungan exponential backoff
 const reconnectAttemptsMap: Record<string, number> = {};
 
-// Cache rule engine untuk mempercepat pencarian (mencegah lag UI akibat hit DB tiap pesan masuk)
-const rulesCache: Record<string, {keyword: string}[]> = {};
-
 // Cache group metadata agar tidak terkena rate limit
 const groupMetadataCache: Record<string, { subject: string, timestamp: number }> = {};
 
-// Cache for cross-device notification deduplication
-const recentNotifiedMessages = new Set<string>();
-
-export function reloadRulesCache(accountId: string) {
-  try {
-    const db = getDatabase();
-    rulesCache[accountId] = db.prepare('SELECT keyword FROM notification_rules WHERE account_id = ? AND is_active = 1').all(accountId) as {keyword: string}[];
-  } catch (err) {
-    console.error(`Gagal memuat rule cache untuk ${accountId}`, err);
-  }
-}
+export { reloadRulesCache };
 
 // Cache Promise versi WA agar jika ada multi-akun yang dimuat serentak, mereka menunggu 1 request yang sama (Anti Race-Condition)
 let waVersionPromise: Promise<[number, number, number]> | null = null;
@@ -133,10 +122,11 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
         
         // 1. Hapus token kadaluarsa 
         const authPath = path.join(app.getPath('userData'), 'accounts', accountId, 'auth');
-        if (fs.existsSync(authPath)) {
-          fs.rmSync(authPath, { recursive: true, force: true });
+        fs.promises.rm(authPath, { recursive: true, force: true }).then(() => {
           console.log(`[${accountId}] Sesi kedaluwarsa dibersihkan secara otomatis.`);
-        }
+        }).catch(err => {
+          console.error(`[${accountId}] Gagal menghapus sesi kedaluwarsa:`, err);
+        });
 
         // 2. [BUG FIX] Hapus dari Database SQLite secara menyeluruh agar tidak me-load hantu/zombie data saat restart
         try {
@@ -173,130 +163,7 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('messages.upsert', async (m) => {
-    const msg = m.messages[0];
-    if (!msg || !msg.key || !msg.key.remoteJid) return; // Pengaman untuk sistem broadcast/status
-
-    // [BUG FIX] Abaikan pesan status WhatsApp agar tidak masuk ke inbox personal
-    if (msg.key.remoteJid === 'status@broadcast') return;
-
-    if (!msg.key.fromMe && m.type === 'notify') {
-      const remoteJid = msg.key.remoteJid;
-      // Identifikasi grup (terverifikasi: akhiran @g.us)
-      const isGroup = remoteJid.endsWith('@g.us');
-      
-      // Resolusi Nama Personal & Grup
-      const senderName = msg.pushName || (msg.key.participant || msg.key.remoteJid)?.split('@')[0] || 'Unknown';
-      let groupName = null;
-      
-      if (isGroup) {
-        try {
-          const now = Date.now();
-          if (!groupMetadataCache[remoteJid] || now - groupMetadataCache[remoteJid].timestamp > 3600000) {
-            const metadata = await sock.groupMetadata(remoteJid);
-            groupMetadataCache[remoteJid] = { subject: metadata.subject, timestamp: now };
-          }
-          groupName = groupMetadataCache[remoteJid].subject;
-        } catch (err) {
-          console.error(`Gagal ambil nama grup ${remoteJid}:`, err);
-        }
-      }
-
-      // Unwrap pesan (ephemeral / viewOnce)
-      let innerMessage = msg.message;
-      if (innerMessage?.ephemeralMessage?.message) {
-        innerMessage = innerMessage.ephemeralMessage.message;
-      } else if (innerMessage?.viewOnceMessage?.message) {
-        innerMessage = innerMessage.viewOnceMessage.message;
-      } else if (innerMessage?.viewOnceMessageV2?.message) {
-        innerMessage = innerMessage.viewOnceMessageV2.message;
-      }
-      
-      // Mengambil teks biasa atau caption gambar/video
-      let textContent = innerMessage?.conversation || 
-                          innerMessage?.extendedTextMessage?.text || 
-                          innerMessage?.imageMessage?.caption || 
-                          innerMessage?.videoMessage?.caption || '';
-                          
-      // Jika pesan adalah media (gambar/stiker/dsb) namun tidak ada caption
-      if (!textContent) {
-        if (innerMessage?.imageMessage || innerMessage?.videoMessage || innerMessage?.stickerMessage || innerMessage?.audioMessage || innerMessage?.documentMessage) {
-          textContent = '[Media/Pesan Non-Teks]';
-        } else if (innerMessage?.reactionMessage || innerMessage?.protocolMessage || innerMessage?.pollCreationMessage) {
-          // Abaikan reaksi, tarikan pesan, atau polling (atau bisa di-handle khusus)
-          return;
-        } else {
-          // [DEBUG] Log struktur pesan yang tidak dikenal
-          console.log(`[DEBUG - Tipe Tak Tertangani]`, JSON.stringify(msg.message, null, 2));
-          textContent = '[Tipe Pesan Tak Tertangani]';
-        }
-      }
-      
-      console.log(`[${accountId}] Pesan baru dari ${senderName}${isGroup ? ` di grup ${groupName}` : ''}: "${textContent}"`);
-      
-      // Simpan ke SQLite
-      try {
-        const db = getDatabase();
-        if (textContent.trim() && textContent !== '[Tipe Pesan Tak Tertangani]') {
-           db.prepare(`
-             INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)
-           `).run(accountId, remoteJid, textContent, isGroup ? 1 : 0, senderName, groupName, msg.key?.id || null);
-        }
-      } catch (err) {
-        console.error(`[${accountId}] Gagal menyimpan pesan ke DB`, err);
-      }
-      
-      // Kirim event ke React Frontend
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('wa-message', { accountId, isGroup, msg, textContent, senderName, groupName });
-      }
-
-      // IMPLEMENTASI RULE ENGINE (Menggunakan Cache Memori untuk mencegah lag UI)
-      try {
-        // Fallback jika cache belum siap
-        if (!rulesCache[accountId]) reloadRulesCache(accountId);
-        if (!rulesCache['ALL']) reloadRulesCache('ALL'); // Load global rules
-        
-        // Merge rules: gabungkan rule khusus akun dengan rule global (ALL)
-        const accountRules = rulesCache[accountId] || [];
-        const globalRules = rulesCache['ALL'] || [];
-        const rules = [...accountRules, ...globalRules];
-        
-        const messageLower = textContent.toLowerCase();
-        
-        for (const rule of rules) {
-          const kw = rule.keyword?.trim();
-          if (kw && kw !== '' && messageLower.includes(kw.toLowerCase())) {
-            console.log(`[RULE ENGINE] Pesan masuk cocok dengan keyword: "${rule.keyword}"`);
-            
-            // Buat signature unik untuk mencegah notifikasi tabrakan antar akun
-            const signature = `${groupName || 'Private'}-${textContent}`;
-            
-            if (!recentNotifiedMessages.has(signature)) {
-              // Panggil Native OS Notification
-              new Notification({
-                title: `Pesan WA Penting`,
-                body: isGroup ? `[Grup: ${groupName}] ${textContent}` : textContent
-              }).show();
-              
-              // Masukkan ke cache untuk deduplikasi
-              recentNotifiedMessages.add(signature);
-              
-              // Hapus dari cache setelah 2 menit agar tidak memory leak
-              setTimeout(() => {
-                recentNotifiedMessages.delete(signature);
-              }, 120000);
-            } else {
-              console.log(`[RULE ENGINE] Notifikasi di-skip karena duplikat lintas-akun (Deduplikasi Aktif)`);
-            }
-            
-            break; // Stop agar tidak muncul notifikasi dobel jika banyak rule cocok
-          }
-        }
-      } catch (err) {
-        console.error('Error saat menjalankan Rule Engine:', err);
-      }
-    }
+    handleIncomingMessage(sock, m, accountId, mainWindow, groupMetadataCache);
   });
 
   activeSockets[accountId] = sock;
@@ -323,7 +190,7 @@ export function deleteWhatsAppAccount(accountId: string) {
     deletedAccounts.add(accountId); // Tandai akun sebagai dihapus
     
     // Hapus dari memory cache agar tidak terjadi memory leak
-    delete rulesCache[accountId];
+    clearRulesCache(accountId);
     delete reconnectAttemptsMap[accountId];
     
     // 1. Putus koneksi soket jika masih aktif
@@ -338,12 +205,13 @@ export function deleteWhatsAppAccount(accountId: string) {
     
     // 2. Hapus folder auth dari disk agar sesi benar-benar hilang (reset)
     const authFolder = path.join(app.getPath('userData'), 'accounts', accountId);
-    if (fs.existsSync(authFolder)) {
-      fs.rmSync(authFolder, { recursive: true, force: true });
+    fs.promises.rm(authFolder, { recursive: true, force: true }).then(() => {
       console.log(`[${accountId}] Folder auth berhasil dihapus.`);
-    }
+    }).catch(err => {
+      console.error(`[${accountId}] Gagal menghapus file sesi:`, err);
+    });
   } catch (err) {
-    console.error(`[${accountId}] Gagal menghapus file sesi:`, err);
+    console.error(`[${accountId}] Gagal menghapus memori akun:`, err);
   }
 }
 

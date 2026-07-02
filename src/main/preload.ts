@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('api', {
   deleteAccount: (accountId: string) => ipcRenderer.invoke('delete-account', accountId),
   
   // Fitur Pesan
-  getMessages: (accountId: string) => ipcRenderer.invoke('get-messages', accountId),
+  getMessages: (accountId: string, offset?: number) => ipcRenderer.invoke('get-messages', accountId, offset),
   deleteMessage: (msgKeyId: string) => ipcRenderer.send('delete-message', msgKeyId),
   clearMessages: (accountId: string, isGroup?: boolean) => ipcRenderer.send('clear-messages', accountId, isGroup),
   

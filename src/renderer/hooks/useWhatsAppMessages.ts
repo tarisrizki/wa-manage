@@ -52,7 +52,7 @@ export function useWhatsAppMessages(activeAccount: string | null) {
   // Load Riwayat Pesan saat akun berganti
   useEffect(() => {
     if (activeAccount) {
-      window.api.getMessages(activeAccount)
+      window.api.getMessages(activeAccount, 0)
         .then(history => {
           setMessages(prev => ({
             ...prev,
@@ -62,6 +62,24 @@ export function useWhatsAppMessages(activeAccount: string | null) {
         .catch(err => console.error("Gagal memuat riwayat pesan:", err));
     }
   }, [activeAccount]);
+
+  const handleLoadMoreMessages = async () => {
+    if (activeAccount) {
+      const currentMsgs = messages[activeAccount] || [];
+      const offset = currentMsgs.length;
+      try {
+        const moreHistory = await window.api.getMessages(activeAccount, offset);
+        if (moreHistory.length > 0) {
+          setMessages(prev => ({
+            ...prev,
+            [activeAccount]: [...moreHistory, ...(prev[activeAccount] || [])]
+          }));
+        }
+      } catch (err) {
+        console.error("Gagal memuat lebih banyak pesan:", err);
+      }
+    }
+  };
 
   const handleAddRule = async (keyword: string) => {
     if (activeAccount) {
@@ -138,6 +156,7 @@ export function useWhatsAppMessages(activeAccount: string | null) {
     handleAddRule,
     handleDeleteRule,
     handleDeleteMessage,
-    handleClearMessages
+    handleClearMessages,
+    handleLoadMoreMessages
   };
 }
