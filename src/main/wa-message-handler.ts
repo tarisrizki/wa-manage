@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, app } from 'electron';
 import { getDatabase } from './database';
 import { processMessageRules } from './wa-rule-engine';
 import { WASocket } from '@whiskeysockets/baileys';
@@ -75,7 +75,7 @@ export async function handleIncomingMessage(
         console.log(`[DEBUG - Tipe Tak Tertangani]`, debugJson);
         
         try {
-          const logFile = path.join(process.cwd(), 'unhandled_messages.log');
+          const logFile = path.join(app.getPath('userData'), 'unhandled_messages.log');
           fs.appendFileSync(logFile, `\n\n--- ${new Date().toISOString()} ---\n${debugJson}`);
         } catch (e) {
           console.error("Failed to write unhandled msg log", e);

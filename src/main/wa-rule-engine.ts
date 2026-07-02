@@ -46,12 +46,12 @@ export function processMessageRules(
         console.log(`[RULE ENGINE] Pesan masuk cocok dengan keyword: "${rule.keyword}"`);
         
         // Buat signature unik untuk mencegah notifikasi tabrakan antar akun
-        const signature = `${groupName || 'Private'}-${textContent}`;
+        const signature = `${remoteJid}-${textContent}`;
         
         if (!recentNotifiedMessages.has(signature)) {
           // Panggil Native OS Notification
           new Notification({
-            title: `Pesan WA Penting`,
+            title: `Pesan WA Penting dari ${senderName}`,
             body: isGroup ? `[Grup: ${groupName}] ${textContent}` : textContent
           }).show();
           
