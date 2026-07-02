@@ -3,6 +3,4 @@ dist/
 .env
 .env.local
 .DS_Store
-postgres_data/
-redis_data/
-evolution_instances/
+release/

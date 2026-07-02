@@ -89,9 +89,9 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
               // Timestamp Baileys biasanya dalam detik, namun terkadang ms
               const ts = Number(m.msg.messageTimestamp);
               const date = new Date(ts > 1e11 ? ts : ts * 1000);
-              timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             } else {
-              timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             }
             
             // Memperbaiki Fallback Key: kombinasi id + remoteJid + idx agar unik

@@ -89,17 +89,20 @@ ipcMain.handle('get-saved-accounts', () => {
 
 // [FITUR BARU] Menghapus akun dari Database dan File System
 ipcMain.handle('delete-account', (event, accountId) => {
+  // [SECURITY FIX] Sanitasi input untuk konsistensi dengan add-wa-account
+  const safeAccountId = String(accountId).replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!safeAccountId) return false;
   
   // 1. Hapus memori dan folder auth
-  deleteWhatsAppAccount(accountId);
+  deleteWhatsAppAccount(safeAccountId);
   
   // 2. Hapus dari database secara menyeluruh untuk mencegah orphan records / data hantu
   const db = getDatabase();
-  db.prepare('DELETE FROM notification_rules WHERE account_id = ?').run(accountId);
-  db.prepare('DELETE FROM messages WHERE account_id = ?').run(accountId);
-  db.prepare('DELETE FROM chats WHERE account_id = ?').run(accountId);
-  db.prepare('DELETE FROM contacts WHERE account_id = ?').run(accountId);
-  db.prepare('DELETE FROM accounts WHERE account_id = ?').run(accountId);
+  db.prepare('DELETE FROM notification_rules WHERE account_id = ?').run(safeAccountId);
+  db.prepare('DELETE FROM messages WHERE account_id = ?').run(safeAccountId);
+  db.prepare('DELETE FROM chats WHERE account_id = ?').run(safeAccountId);
+  db.prepare('DELETE FROM contacts WHERE account_id = ?').run(safeAccountId);
+  db.prepare('DELETE FROM accounts WHERE account_id = ?').run(safeAccountId);
   
   return true;
 });
