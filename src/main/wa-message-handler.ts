@@ -1,9 +1,15 @@
 import { BrowserWindow } from 'electron';
 import { getDatabase } from './database';
 import { processMessageRules } from './wa-rule-engine';
+import { WASocket } from '@whiskeysockets/baileys';
+import fs from 'fs';
+import path from 'path';
+
+const UNHANDLED_MSG_TYPE = '[Tipe Pesan Tak Tertangani]';
+const MEDIA_MSG_TYPE = '[Media/Pesan Non-Teks]';
 
 export async function handleIncomingMessage(
-  sock: any,
+  sock: WASocket,
   m: any,
   accountId: string,
   mainWindow: BrowserWindow | null,
@@ -34,6 +40,9 @@ export async function handleIncomingMessage(
         groupName = groupMetadataCache[remoteJid].subject;
       } catch (err) {
         console.error(`Gagal ambil nama grup ${remoteJid}:`, err);
+        // Negative caching to prevent spamming the API if group metadata fetch fails
+        groupMetadataCache[remoteJid] = { subject: 'Unknown Group', timestamp: Date.now() };
+        groupName = 'Unknown Group';
       }
     }
 
@@ -56,14 +65,23 @@ export async function handleIncomingMessage(
     // Jika pesan adalah media (gambar/stiker/dsb) namun tidak ada caption
     if (!textContent) {
       if (innerMessage?.imageMessage || innerMessage?.videoMessage || innerMessage?.stickerMessage || innerMessage?.audioMessage || innerMessage?.documentMessage) {
-        textContent = '[Media/Pesan Non-Teks]';
-      } else if (innerMessage?.reactionMessage || innerMessage?.protocolMessage || innerMessage?.pollCreationMessage) {
-        // Abaikan reaksi, tarikan pesan, atau polling (atau bisa di-handle khusus)
+        textContent = MEDIA_MSG_TYPE;
+      } else if (innerMessage?.reactionMessage || innerMessage?.protocolMessage || innerMessage?.pollCreationMessage || innerMessage?.senderKeyDistributionMessage) {
+        // Abaikan reaksi, tarikan pesan, polling, atau pesan protokol enkripsi internal WhatsApp
         return;
       } else {
         // [DEBUG] Log struktur pesan yang tidak dikenal
-        console.log(`[DEBUG - Tipe Tak Tertangani]`, JSON.stringify(msg.message, null, 2));
-        textContent = '[Tipe Pesan Tak Tertangani]';
+        const debugJson = JSON.stringify(msg.message, null, 2);
+        console.log(`[DEBUG - Tipe Tak Tertangani]`, debugJson);
+        
+        try {
+          const logFile = path.join(process.cwd(), 'unhandled_messages.log');
+          fs.appendFileSync(logFile, `\n\n--- ${new Date().toISOString()} ---\n${debugJson}`);
+        } catch (e) {
+          console.error("Failed to write unhandled msg log", e);
+        }
+        
+        textContent = UNHANDLED_MSG_TYPE;
       }
     }
     
@@ -72,7 +90,7 @@ export async function handleIncomingMessage(
     // Simpan ke SQLite
     try {
       const db = getDatabase();
-      if (textContent.trim() && textContent !== '[Tipe Pesan Tak Tertangani]') {
+      if (textContent.trim() && textContent !== UNHANDLED_MSG_TYPE) {
          db.prepare(`
            INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id) 
            VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -88,6 +106,11 @@ export async function handleIncomingMessage(
     }
 
     // Panggil Rule Engine
-    processMessageRules(accountId, textContent, isGroup, groupName);
+    try {
+      // Menambahkan await jika suatu saat fungsi ini diubah menjadi async, dan try-catch untuk safety
+      processMessageRules(accountId, textContent, isGroup, groupName, remoteJid, senderName);
+    } catch (err) {
+      console.error(`[${accountId}] Gagal menjalankan rule engine:`, err);
+    }
   }
 }

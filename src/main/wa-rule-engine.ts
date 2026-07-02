@@ -20,7 +20,14 @@ export function clearRulesCache(accountId: string) {
   delete rulesCache[accountId];
 }
 
-export function processMessageRules(accountId: string, textContent: string, isGroup: boolean, groupName: string | null) {
+export function processMessageRules(
+  accountId: string, 
+  textContent: string, 
+  isGroup: boolean, 
+  groupName: string | null,
+  remoteJid: string,
+  senderName: string
+) {
   try {
     // Fallback jika cache belum siap
     if (!rulesCache[accountId]) reloadRulesCache(accountId);
