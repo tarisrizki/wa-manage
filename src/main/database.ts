@@ -87,6 +87,21 @@ export function initDatabase() {
       is_active BOOLEAN DEFAULT 1
     )
   `);
+
+  // Clean up any existing duplicate messages
+  try {
+    db.exec(`
+      DELETE FROM messages 
+      WHERE id NOT IN (
+        SELECT MIN(id) 
+        FROM messages 
+        WHERE msg_key_id IS NOT NULL 
+        GROUP BY account_id, msg_key_id
+      ) AND msg_key_id IS NOT NULL;
+    `);
+  } catch (e) {
+    console.error("Gagal membersihkan duplikat:", e);
+  }
   
   console.log('Local SQLite Database initialized at:', dbPath);
 }

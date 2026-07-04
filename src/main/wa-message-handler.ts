@@ -91,9 +91,15 @@ export async function handleIncomingMessage(
     console.log(`[${accountId}] Pesan ${msg.key.fromMe ? 'keluar' : 'baru'} ${msg.key.fromMe ? 'ke' : 'dari'} ${senderName}${isGroup ? ` di grup ${groupName}` : ''} (Teks disembunyikan untuk privasi)`);
     
     // Simpan ke SQLite
+    let isDuplicate = false;
     try {
       const db = getDatabase();
-      if (textContent.trim() && textContent !== UNHANDLED_MSG_TYPE) {
+      if (msg.key?.id) {
+        const existing = db.prepare(`SELECT 1 FROM messages WHERE msg_key_id = ? AND account_id = ?`).get(msg.key.id, accountId);
+        if (existing) isDuplicate = true;
+      }
+      
+      if (!isDuplicate && textContent.trim() && textContent !== UNHANDLED_MSG_TYPE) {
          db.prepare(`
            INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id, from_me) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -101,6 +107,10 @@ export async function handleIncomingMessage(
       }
     } catch (err) {
       console.error(`[${accountId}] Gagal menyimpan pesan ke DB`, err);
+    }
+    
+    if (isDuplicate) {
+      return; // Abaikan pesan yang sudah pernah diproses/disimpan
     }
     
     // Kirim event ke React Frontend
