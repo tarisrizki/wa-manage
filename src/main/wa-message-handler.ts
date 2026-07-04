@@ -88,8 +88,7 @@ export async function handleIncomingMessage(
       }
     }
     
-    const truncatedText = textContent.length > 100 ? textContent.substring(0, 100) + '...' : textContent;
-    console.log(`[${accountId}] Pesan ${msg.key.fromMe ? 'keluar' : 'baru'} ${msg.key.fromMe ? 'ke' : 'dari'} ${senderName}${isGroup ? ` di grup ${groupName}` : ''}: "${truncatedText}"`);
+    console.log(`[${accountId}] Pesan ${msg.key.fromMe ? 'keluar' : 'baru'} ${msg.key.fromMe ? 'ke' : 'dari'} ${senderName}${isGroup ? ` di grup ${groupName}` : ''} (Teks disembunyikan untuk privasi)`);
     
     // Simpan ke SQLite
     try {

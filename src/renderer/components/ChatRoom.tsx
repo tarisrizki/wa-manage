@@ -42,11 +42,35 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
     }
   };
 
-  // Auto scroll ke bawah hanya ketika messages untuk akun ini bertambah
+  // Auto scroll ke bawah hanya ketika messages untuk akun ini bertambah,
+  // kecuali jika ini adalah proses prepending (Muat Pesan Lama).
+  const prevMessagesLength = useRef(0);
+  const prevScrollHeight = useRef(0);
+  const prevLastMessageId = useRef<string | undefined>(undefined);
+
   useEffect(() => {
-    if (scrollRef.current) {
+    if (!scrollRef.current) return;
+    
+    const currentLength = messages.length;
+    const pLength = prevMessagesLength.current;
+    
+    const currentLastMessageId = messages[currentLength - 1]?.msg?.key?.id as string | undefined;
+    
+    // Deteksi jika pesan lama dimuat: array bertambah, tapi pesan terakhir (terbaru) tetap sama
+    const isPrepend = pLength > 0 && currentLength > pLength && currentLastMessageId === prevLastMessageId.current;
+
+    if (isPrepend) {
+      // Pertahankan posisi scroll relatif agar tidak melompat ke bawah
+      const newScrollHeight = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop += (newScrollHeight - prevScrollHeight.current);
+    } else {
+      // Auto-scroll ke bawah untuk pesan baru
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+
+    prevMessagesLength.current = currentLength;
+    prevScrollHeight.current = scrollRef.current.scrollHeight;
+    prevLastMessageId.current = currentLastMessageId;
   }, [messages, activeAccount]);
 
   return (
