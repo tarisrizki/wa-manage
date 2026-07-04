@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ShieldCheck, Trash2, Trash, Users, User, Reply, Send, X } from 'lucide-react';
+import { Trash2, Trash, Users, User, Reply, Send, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { WhatsAppMessage } from '../types';
 
@@ -7,14 +7,13 @@ export interface ChatRoomProps {
   title?: string;
   messages: WhatsAppMessage[];
   activeAccount: string;
-  rules: {id: number, keyword: string}[];
-  onDeleteRule?: (id: number) => void;
+  rules: {id: number, keyword: string, is_active?: number}[];
   onDeleteMessage?: (msgKeyId: string) => void;
   onClearMessages?: () => void;
   onLoadMore?: () => void;
 }
 
-export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, onDeleteMessage, onClearMessages, onLoadMore }: ChatRoomProps) {
+export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessage, onClearMessages, onLoadMore }: ChatRoomProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // State untuk membalas pesan
@@ -204,7 +203,7 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
                     {/* Delete Icon (muncul saat hover) - Berlaku untuk SEMUA pesan */}
                     {onDeleteMessage && m.msg?.key?.id && (
                       <button 
-                        onClick={() => onDeleteMessage(m.msg.key.id as string)}
+                        onClick={() => onDeleteMessage(m.msg?.key?.id as string)}
                         className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400 focus:outline-none bg-wa-panel/80 hover:bg-wa-panel rounded-full p-1.5 shadow-sm z-10"
                         title="Hapus Pesan"
                       >
