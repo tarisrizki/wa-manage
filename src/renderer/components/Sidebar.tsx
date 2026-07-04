@@ -3,6 +3,7 @@ import { Plus, MoreVertical, Search, Filter, Trash2, Smartphone, Monitor, Inbox 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useToast } from './ui/ToastProvider';
 
 export interface SidebarProps {
   savedAccounts: string[];
@@ -14,17 +15,10 @@ export interface SidebarProps {
   onDeleteAccount: (e: React.MouseEvent, id: string) => void;
 }
 
-export function Sidebar({ 
-  savedAccounts, 
-  connectedAccounts, 
-  qrs, 
-  activeAccount, 
-  setActiveAccount, 
-  onAddAccount, 
-  onDeleteAccount 
-}: SidebarProps) {
-  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+export function Sidebar({ savedAccounts, connectedAccounts, qrs, activeAccount, setActiveAccount, onAddAccount, onDeleteAccount }: SidebarProps) {
   const [newAccountId, setNewAccountId] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const { showConfirm } = useToast();
 
   const handleAddAccount = () => {
     if (newAccountId && newAccountId.trim()) {
@@ -44,7 +38,7 @@ export function Sidebar({
           <Monitor className="text-wa-textDark" size={24} />
         </div>
         <div className="flex items-center space-x-4 text-[#aebac1]">
-          <Dialog open={isAddAccountOpen} onOpenChange={setIsAddAccountOpen}>
+          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
             <DialogTrigger render={<Button variant="ghost" size="icon" className="p-2 w-auto h-auto rounded-full hover:bg-wa-hover transition-colors" title="Tambah Akun" />}>
               <Plus size={20} />
             </DialogTrigger>
@@ -65,17 +59,18 @@ export function Sidebar({
                 />
               </div>
               <DialogFooter>
-                <Button onClick={handleAddAccount} className="bg-wa-green hover:bg-wa-greenHover text-white">Tambahkan</Button>
+                <Button onClick={handleAddAccount} className="bg-wa-primary hover:bg-wa-primary/90 text-white">Tambahkan</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <button className="p-2 rounded-full hover:bg-wa-hover transition-colors">
+          {/* <button className="p-2 rounded-full hover:bg-wa-hover transition-colors">
             <MoreVertical size={20} />
-          </button>
+          </button> */}
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar (Hidden until implemented) */}
+      {/* 
       <div className="h-[50px] flex items-center px-3 py-2 border-b border-wa-border">
         <div className="flex-1 flex items-center bg-wa-panel rounded-lg px-3 py-1.5 h-[35px]">
           <Search size={18} className="text-wa-textMuted mr-4" />
@@ -88,7 +83,8 @@ export function Sidebar({
         <button className="ml-2 p-1.5 text-wa-textMuted">
           <Filter size={18} />
         </button>
-      </div>
+      </div> 
+      */}
 
       {/* Chat List (Daftar Akun) */}
       <div className="flex-1 overflow-y-auto bg-wa-bg scrollbar-thin">
@@ -128,17 +124,27 @@ export function Sidebar({
               </div>
               <div className="flex-1 border-b border-wa-border h-full flex flex-col justify-center pr-2 min-w-0">
                 <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-white text-[17px] font-normal truncate mr-2">{accId}</span>
+                  <span className="text-white text-[17px] font-medium truncate mr-2">{accId}</span>
                   <div className="flex items-center space-x-2 shrink-0">
-                    <span className={`text-xs ${isConnected ? 'text-wa-green' : 'text-wa-textMuted'}`}>
-                      {isConnected ? 'Online' : hasQR ? 'Scan QR' : 'Connecting'}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="relative flex h-2.5 w-2.5">
+                        {isConnected && (
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-wa-teal opacity-75"></span>
+                        )}
+                        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                          isConnected ? 'bg-wa-teal' : hasQR ? 'bg-amber-500' : 'bg-gray-500'
+                        }`}></span>
+                      </span>
+                    </div>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm('Yakin ingin menghapus akun ini? Anda harus scan QR ulang jika ingin login kembali.')) {
-                          onDeleteAccount(e, accId);
-                        }
+                        showConfirm({
+                          title: 'Hapus Akun',
+                          message: 'Yakin ingin menghapus akun ini? Anda harus scan QR ulang jika ingin login kembali.',
+                          confirmText: 'Hapus',
+                          onConfirm: () => onDeleteAccount(e, accId)
+                        });
                       }}
                       className="p-2 hover:bg-[#374c58] rounded-full text-wa-textMuted hover:text-wa-danger transition-colors cursor-pointer relative z-50"
                       title="Hapus Akun"

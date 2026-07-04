@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Trash2, Trash, Users, User, Reply, Send, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { WhatsAppMessage } from '../types';
+import { useToast } from './ui/ToastProvider';
 
 export interface ChatRoomProps {
   title?: string;
@@ -20,6 +21,7 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
   const [replyTarget, setReplyTarget] = useState<{ jid: string, name: string, accountId: string } | null>(null);
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const { showToast, showConfirm } = useToast();
 
   const handleSendReply = async () => {
     if (!replyTarget || !replyText.trim()) return;
@@ -30,12 +32,13 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
       if (success) {
         setReplyText('');
         setReplyTarget(null);
+        showToast({ message: 'Pesan terkirim', type: 'success' });
       } else {
-        alert('Gagal mengirim pesan. Pastikan koneksi WhatsApp stabil.');
+        showToast({ message: 'Gagal mengirim pesan. Pastikan koneksi WhatsApp stabil.', type: 'error' });
       }
     } catch (err) {
       console.error(err);
-      alert('Terjadi kesalahan saat mengirim pesan.');
+      showToast({ message: 'Terjadi kesalahan saat mengirim pesan.', type: 'error' });
     } finally {
       setIsSending(false);
     }
@@ -72,13 +75,19 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
     prevLastMessageId.current = currentLastMessageId;
   }, [messages, activeAccount]);
 
+  const handleScroll = () => {
+    if (scrollRef.current && scrollRef.current.scrollTop === 0 && onLoadMore) {
+      onLoadMore();
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full relative w-full overflow-hidden">
       {/* Scrollable Messages Area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-transparent scrollbar-thin relative z-10 px-4 py-6 md:px-12 lg:px-20 flex flex-col space-y-2">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto bg-transparent scrollbar-thin relative z-10 px-4 py-6 md:px-12 lg:px-20 flex flex-col space-y-2">
         {/* Header/Banner (Glassmorphism) */}
           <div className="flex justify-center mb-6 sticky top-2 z-20">
-            <div className="bg-[#111b21]/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-white/5 flex items-center justify-between w-full max-w-sm">
+            <div className="bg-wa-panel/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-white/5 flex items-center justify-between w-full max-w-sm">
               <span className="flex items-center text-[13px] text-gray-300 font-semibold tracking-wide">
                 <span className="mr-2">{title?.includes('Grup') ? '🏢' : '👤'}</span>
                 {title ? title.toUpperCase() : ''}
@@ -86,11 +95,14 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
               {messages.length > 0 && onClearMessages && (
                 <button 
                   onClick={() => {
-                    if (confirm('Yakin ingin menghapus SEMUA chat di layar ini?')) {
-                      onClearMessages();
-                    }
+                    showConfirm({
+                      title: 'Bersihkan Pesan',
+                      message: 'Yakin ingin menghapus SEMUA chat di layar ini?',
+                      confirmText: 'Hapus Semua',
+                      onConfirm: () => onClearMessages()
+                    });
                   }}
-                  className="text-red-400 hover:text-red-300 p-1.5 rounded-md hover:bg-wa-hover transition-colors ml-4 flex items-center"
+                  className="text-wa-danger hover:text-red-300 p-1.5 rounded-md hover:bg-wa-hover transition-colors ml-4 flex items-center"
                   title="Bersihkan Semua Pesan"
                 >
                   <Trash size={14} />
@@ -113,16 +125,6 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
             </div>
           ) : (
             <>
-              {messages.length > 0 && onLoadMore && (
-                <div className="flex justify-center my-2">
-                  <button 
-                    onClick={onLoadMore}
-                    className="text-xs text-wa-textMuted hover:text-white bg-wa-panel hover:bg-wa-hover px-3 py-1.5 rounded-full transition-colors border border-wa-border"
-                  >
-                    Muat Pesan Lama
-                  </button>
-                </div>
-              )}
               {messages.map((m, idx) => {
               const remoteJid = m.msg?.key?.remoteJid;
               const senderId = m.isGroup ? (m.msg?.key?.participant || remoteJid) : remoteJid;

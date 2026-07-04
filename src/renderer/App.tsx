@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings, GripVertical, Megaphone } from 'lucide-react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { AnimatePresence } from 'framer-motion';
-import bgDoodle from './assets/doodle.png';
+
 import { useWhatsAppAccounts } from './hooks/useWhatsAppAccounts';
 import { useWhatsAppMessages } from './hooks/useWhatsAppMessages';
 
@@ -44,10 +44,6 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen w-full font-sans text-wa-textDark bg-wa-bg selection:bg-wa-green selection:text-white overflow-hidden">
       
-      {/* Latar Belakang Khas WA (Doodle) */}
-      <div className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none" 
-           style={{ backgroundImage: `url(${bgDoodle})`, backgroundRepeat: 'repeat' }}>
-      </div>
 
       <AnimatePresence>
         {isBroadcastModalOpen && activeAccount && (
