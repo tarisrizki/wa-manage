@@ -4,6 +4,12 @@ A desktop application for managing multiple WhatsApp accounts in one centralized
 
 ## Features
 - **Multi-Account Support:** Connect and manage multiple WhatsApp numbers simultaneously without limits.
+- **Advanced Group Broadcast:** Broadcast text and images to hundreds of groups effortlessly with built-in spam protection.
+- **Ultra Anti-Ban Protection:** Features enterprise-grade anti-ban measures including:
+  - **Browser Fingerprint Spoofing** (Masks connection as Mac OS Safari)
+  - **Dynamic Typing Simulation**
+  - **Hash Randomization / Invisible Spintax** (Injects invisible zero-width chars to make every message unique)
+  - **Randomized Send Delays & Batching** (Auto-cooldowns)
 - **Chat Segregation:** Automatically separates Group chats from Personal chats for a cleaner inbox.
 - **Rule Engine & Notifications:** Set up keyword-based notification rules per account or globally to only get notified for important messages.
 - **Local Database:** Stores message history locally using native `node:sqlite` (no external dependencies required).
