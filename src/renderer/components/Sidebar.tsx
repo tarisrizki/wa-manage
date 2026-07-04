@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, MoreVertical, Search, Filter, Trash2, Smartphone, Monitor, Inbox } from 'lucide-react';
+import { Monitor, Trash2, Smartphone, Plus, Inbox } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ export function Sidebar({ savedAccounts, connectedAccounts, qrs, activeAccount, 
       if (!cleanId) return;
       onAddAccount(cleanId);
       setNewAccountId('');
-      setIsAddAccountOpen(false);
+      setIsAddModalOpen(false);
     }
   };
 

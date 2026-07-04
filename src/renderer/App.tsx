@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings, GripVertical, Megaphone } from 'lucide-react';
+import { useState } from 'react';
+import { Smartphone, GripVertical, Megaphone, MonitorSmartphone } from 'lucide-react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { AnimatePresence } from 'framer-motion';
 
@@ -132,7 +132,6 @@ export default function App() {
                         messages={filteredMessages.filter(m => m.isGroup)} 
                         activeAccount={activeAccount}
                         rules={rules}
-                        onDeleteRule={handleDeleteRule}
                         onDeleteMessage={handleDeleteMessage}
                         onClearMessages={() => handleClearMessages(true)}
                         onLoadMore={handleLoadMoreMessages}
@@ -155,7 +154,6 @@ export default function App() {
                         messages={filteredMessages.filter(m => !m.isGroup)} 
                         activeAccount={activeAccount}
                         rules={rules}
-                        onDeleteRule={handleDeleteRule}
                         onDeleteMessage={handleDeleteMessage}
                         onClearMessages={() => handleClearMessages(false)}
                         onLoadMore={handleLoadMoreMessages}

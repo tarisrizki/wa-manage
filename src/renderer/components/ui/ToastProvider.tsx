@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
@@ -36,9 +36,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [confirm, setConfirm] = useState<ConfirmOptions | null>(null);
 
   const showToast = (options: ToastOptions) => {
-    setToast({ ...options, id: Date.now() });
+    const id = Date.now();
+    setToast({ ...options, id });
     setTimeout(() => {
-      setToast((current) => (current?.id === options.id ? null : current));
+      setToast((current) => (current?.id === id ? null : current));
     }, 3000);
   };
 

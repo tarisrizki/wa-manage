@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Send, Users, AlertCircle, CheckCircle2, Clock, Image as ImageIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface BroadcastModalProps {
   activeAccount: string;
@@ -158,7 +158,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
   if (activeAccount === 'ALL') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-wa-panel border border-[#313d45] rounded-2xl p-6 shadow-2xl max-w-sm w-full relative">
+        <div className="bg-wa-panel border border-wa-border rounded-2xl p-6 shadow-2xl max-w-sm w-full relative">
           <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
             <X size={20} />
           </button>
@@ -170,7 +170,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
             </p>
             <button 
               onClick={onClose}
-              className="mt-6 w-full py-2 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-lg font-medium transition-colors"
+              className="mt-6 w-full py-2 bg-wa-primary hover:bg-wa-primary/90 text-white rounded-lg font-medium transition-colors"
             >
               Mengerti
             </button>
@@ -186,7 +186,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="bg-wa-panel border border-[#313d45] rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden relative flex-row"
+        className="bg-wa-panel border border-wa-border rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden relative flex-row"
         style={{ display: 'flex', flexDirection: 'row' }}
       >
         <button 
@@ -198,10 +198,10 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
         </button>
 
         {/* KOLOM KIRI: Daftar Grup */}
-        <div className="w-1/2 border-r border-[#313d45] flex flex-col bg-[#111b21]">
-          <div className="p-5 border-b border-[#313d45]">
-            <h2 className="text-xl font-medium text-[#e9edef] flex items-center">
-              <Users className="mr-2 text-[#00a884]" />
+        <div className="w-1/2 border-r border-wa-border flex flex-col bg-wa-bg">
+          <div className="p-5 border-b border-wa-border">
+            <h2 className="text-xl font-medium text-wa-textDark flex items-center">
+              <Users className="mr-2 text-wa-primary" />
               Pilih Target Grup
             </h2>
             <p className="text-xs text-gray-400 mt-1">Akun: {activeAccount}</p>
@@ -210,7 +210,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
           <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#00a884] border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-wa-primary border-t-transparent"></div>
                 <p className="text-sm">Memuat daftar grup...</p>
               </div>
             ) : groups.length === 0 ? (
@@ -223,12 +223,12 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
               <div className="space-y-1">
                 <div 
                   onClick={toggleAll}
-                  className="flex items-center p-3 rounded-lg hover:bg-wa-hover cursor-pointer transition-colors mb-2 sticky top-0 bg-[#111b21] z-10 border-b border-[#313d45]"
+                  className="flex items-center p-3 rounded-lg hover:bg-wa-hover cursor-pointer transition-colors mb-2 sticky top-0 bg-wa-bg z-10 border-b border-wa-border"
                 >
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center mr-3 ${selectedIds.size === groups.length ? 'bg-[#00a884] border-[#00a884]' : 'border-gray-500'}`}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center mr-3 ${selectedIds.size === groups.length ? 'bg-wa-primary border-wa-primary' : 'border-gray-500'}`}>
                     {selectedIds.size === groups.length && <CheckCircle2 size={14} className="text-white" />}
                   </div>
-                  <span className="text-[#e9edef] font-medium flex-1">Pilih Semua ({groups.length})</span>
+                  <span className="text-wa-textDark font-medium flex-1">Pilih Semua ({groups.length})</span>
                 </div>
                 
                 {groups.map(g => (
@@ -237,13 +237,13 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
                     onClick={() => !isSending && toggleSelection(g.id)}
                     className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
                       isSending ? 'opacity-50 cursor-not-allowed' : 'hover:bg-wa-hover'
-                    } ${selectedIds.has(g.id) ? 'bg-[#2a3942]' : ''}`}
+                    } ${selectedIds.has(g.id) ? 'bg-wa-hover' : ''}`}
                   >
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center mr-3 shrink-0 ${selectedIds.has(g.id) ? 'bg-[#00a884] border-[#00a884]' : 'border-gray-500'}`}>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center mr-3 shrink-0 ${selectedIds.has(g.id) ? 'bg-wa-primary border-wa-primary' : 'border-gray-500'}`}>
                       {selectedIds.has(g.id) && <CheckCircle2 size={14} className="text-white" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[#e9edef] text-sm font-medium truncate">{g.name}</p>
+                      <p className="text-wa-textDark text-sm font-medium truncate">{g.name}</p>
                       <p className="text-gray-500 text-xs truncate">{g.id.split('@')[0]}</p>
                     </div>
                   </div>
@@ -259,25 +259,25 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
             
             {!isSending && progress.total === 0 ? (
               <>
-                <h3 className="text-lg font-medium text-[#e9edef] mb-4">Pesan Broadcast</h3>
+                <h3 className="text-lg font-medium text-wa-textDark mb-4">Pesan Broadcast</h3>
                 
                 <textarea
                   value={message}
                   onChange={e => setMessage(e.target.value)}
                   placeholder={imageFile ? "Ketik caption untuk gambar ini..." : "Ketik pesan yang akan dikirim ke banyak grup sekaligus..."}
-                  className="w-full bg-[#2a3942] text-[#e9edef] border border-transparent focus:border-[#00a884] rounded-xl p-4 min-h-[160px] resize-none focus:outline-none transition-colors scrollbar-thin"
+                  className="w-full bg-wa-hover text-wa-textDark border border-transparent focus:border-wa-primary rounded-xl p-4 min-h-[160px] resize-none focus:outline-none transition-colors scrollbar-thin"
                 />
                 
                 {/* Image Attachment Area */}
-                <div className="mt-4 flex items-center justify-between bg-[#111b21] p-3 rounded-xl border border-[#313d45]">
+                <div className="mt-4 flex items-center justify-between bg-wa-bg p-3 rounded-xl border border-wa-border">
                   {imageFile ? (
                     <div className="flex items-center flex-1 min-w-0 mr-4">
-                      <div className="w-10 h-10 rounded bg-[#2a3942] flex items-center justify-center mr-3 shrink-0 overflow-hidden">
+                      <div className="w-10 h-10 rounded bg-wa-hover flex items-center justify-center mr-3 shrink-0 overflow-hidden">
                         {/* We use a tiny preview by creating a local object URL */}
                         <img src={URL.createObjectURL(imageFile)} alt="Preview" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#e9edef] truncate">{imageFile.name}</p>
+                        <p className="text-sm text-wa-textDark truncate">{imageFile.name}</p>
                         <p className="text-xs text-gray-500">{(imageFile.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
                       <button 
@@ -310,7 +310,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
                       />
                       <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 bg-[#2a3942] hover:bg-[#313d45] text-white text-sm rounded-lg transition-colors font-medium"
+                        className="px-4 py-2 bg-wa-hover hover:bg-wa-hover text-white text-sm rounded-lg transition-colors font-medium"
                       >
                         Pilih Gambar
                       </button>
@@ -318,7 +318,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
                   )}
                 </div>
                 
-                <div className="mt-6 bg-[#111b21] p-4 rounded-xl border border-[#313d45]">
+                <div className="mt-6 bg-wa-bg p-4 rounded-xl border border-wa-border">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center">
                       <Clock size={16} className="text-yellow-500 mr-2" />
@@ -336,16 +336,16 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
                           min="1" max="10" step="1"
                           value={delaySec}
                           onChange={e => setDelaySec(parseInt(e.target.value))}
-                          className="flex-1 accent-[#00a884]"
+                          className="flex-1 accent-wa-primary"
                         />
-                        <span className="text-[#00a884] font-bold text-sm bg-[#00a884]/10 px-3 py-1 rounded-md min-w-[75px] text-center">
+                        <span className="text-wa-primary font-bold text-sm bg-wa-primary/10 px-3 py-1 rounded-md min-w-[75px] text-center">
                           {delaySec} Detik
                         </span>
                       </div>
                     </div>
                     
                     {/* Batching */}
-                    <div className="pt-3 border-t border-[#313d45]">
+                    <div className="pt-3 border-t border-wa-border">
                       <p className="text-xs text-gray-400 mb-2">Istirahat Otomatis (Batching):</p>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <span>Setiap</span>
@@ -354,7 +354,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
                           min="0"
                           value={batchSize}
                           onChange={e => setBatchSize(parseInt(e.target.value) || 0)}
-                          className="w-16 bg-[#2a3942] border border-[#313d45] rounded-md px-2 py-1 text-center focus:outline-none focus:border-[#00a884]"
+                          className="w-16 bg-wa-hover border border-wa-border rounded-md px-2 py-1 text-center focus:outline-none focus:border-wa-primary"
                         />
                         <span>pesan, istirahat selama</span>
                         <input 
@@ -362,14 +362,14 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
                           min="0"
                           value={batchDelaySec}
                           onChange={e => setBatchDelaySec(parseInt(e.target.value) || 0)}
-                          className="w-16 bg-[#2a3942] border border-[#313d45] rounded-md px-2 py-1 text-center focus:outline-none focus:border-[#00a884]"
+                          className="w-16 bg-wa-hover border border-wa-border rounded-md px-2 py-1 text-center focus:outline-none focus:border-wa-primary"
                         />
                         <span>detik.</span>
                       </div>
                     </div>
 
                     {/* Spintax Toggle */}
-                    <div className="pt-3 border-t border-[#313d45] flex items-center justify-between">
+                    <div className="pt-3 border-t border-wa-border flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-300">Hash Randomization (Invisible Spintax)</p>
                         <p className="text-xs text-gray-500 mt-1">Menyisipkan spasi kosong tak terlihat agar teks selalu 100% unik di server.</p>
@@ -381,7 +381,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
                           onChange={e => setUseSpintax(e.target.checked)}
                           className="sr-only peer" 
                         />
-                        <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00a884]"></div>
+                        <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-wa-primary"></div>
                       </label>
                     </div>
 
@@ -391,23 +391,23 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
             ) : (
               <div className="flex-1 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-[#e9edef]">Status Pengiriman</h3>
-                  <span className="text-sm font-bold text-[#00a884] bg-[#00a884]/10 px-3 py-1 rounded-full">
+                  <h3 className="text-lg font-medium text-wa-textDark">Status Pengiriman</h3>
+                  <span className="text-sm font-bold text-wa-primary bg-wa-primary/10 px-3 py-1 rounded-full">
                     {progress.current} / {progress.total}
                   </span>
                 </div>
                 
                 {/* Progress Bar */}
-                <div className="w-full h-2 bg-[#2a3942] rounded-full overflow-hidden mb-4">
+                <div className="w-full h-2 bg-wa-hover rounded-full overflow-hidden mb-4">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
-                    className="h-full bg-[#00a884]"
+                    className="h-full bg-wa-primary"
                   />
                 </div>
                 
                 {/* Log View */}
-                <div className="flex-1 bg-[#111b21] rounded-xl border border-[#313d45] p-3 overflow-y-auto font-mono text-xs flex flex-col gap-1.5 scrollbar-thin">
+                <div className="flex-1 bg-wa-bg rounded-xl border border-wa-border p-3 overflow-y-auto font-mono text-xs flex flex-col gap-1.5 scrollbar-thin">
                   {logs.map((log, i) => (
                     <div key={i} className={log.isError ? 'text-red-400' : 'text-gray-300'}>
                       {log.msg}
@@ -426,14 +426,14 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
           </div>
 
           {/* Footer / Action */}
-          <div className="p-4 border-t border-[#313d45] bg-[#202c33] shrink-0">
+          <div className="p-4 border-t border-wa-border bg-wa-panel shrink-0">
             {(!isSending && progress.total > 0 && progress.current === progress.total) ? (
               <button
                 onClick={() => {
                   setProgress({ total: 0, current: 0 });
                   setMessage('');
                 }}
-                className="w-full py-3 bg-[#313d45] hover:bg-[#2a3942] text-white rounded-xl font-medium transition-colors"
+                className="w-full py-3 bg-wa-hover hover:bg-wa-hover text-white rounded-xl font-medium transition-colors"
               >
                 Kirim Broadcast Lain
               </button>
@@ -441,7 +441,7 @@ export function BroadcastModal({ activeAccount, onClose }: BroadcastModalProps) 
               <button
                 onClick={handleSend}
                 disabled={isSending || selectedIds.size === 0 || !message.trim()}
-                className="w-full py-3 bg-[#00a884] hover:bg-[#008f6f] disabled:bg-[#313d45] disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-xl font-medium flex items-center justify-center transition-colors shadow-lg"
+                className="w-full py-3 bg-wa-primary hover:bg-wa-primary/90 disabled:bg-wa-hover disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-xl font-medium flex items-center justify-center transition-colors shadow-lg"
               >
                 {isSending ? (
                   <>
