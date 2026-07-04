@@ -164,6 +164,17 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
               const validRules = rules.filter(r => r.is_active === 1 && r.keyword && r.keyword.trim() !== '');
               const matchedRules = validRules.filter(r => m.textContent.toLowerCase().includes(r.keyword.toLowerCase()));
               const isHighlighted = matchedRules.length > 0;
+              const fromMe = m.msg?.key?.fromMe;
+              
+              // Nama pengirim untuk tail separator
+              let tailText = '';
+              if (m.isGroup) {
+                tailText = `${m.groupName || 'Unknown Group'} • ${fromMe ? 'Anda' : (m.senderName || senderId?.split('@')[0] || 'Unknown')}`;
+              } else {
+                tailText = fromMe 
+                  ? `Anda ➔ ${m.senderName || senderId?.split('@')[0] || 'Unknown'}`
+                  : `Personal • ${m.senderName || senderId?.split('@')[0] || 'Unknown'}`;
+              }
               
               return (
                 <motion.div 
@@ -171,19 +182,17 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className={`flex flex-col ${isHighlighted ? 'mt-4' : ''}`}
+                  className={`flex flex-col w-full ${isHighlighted ? 'mt-4' : ''} ${fromMe ? 'items-end' : 'items-start'}`}
                 >
                   {/* Tail / Pemisah Grup Bubble */}
                   {showTail && (
-                    <div className="flex justify-center my-3">
+                    <div className={`flex my-3 w-full justify-center`}>
                       <span className="bg-[#182229] text-gray-400 text-[11px] font-medium px-3 py-1 rounded-full shadow-sm flex items-center">
-                        {m.isGroup ? (m.groupName || 'Unknown Group') : 'Personal'} 
-                        <span className="mx-1.5">•</span> 
-                        <span className="truncate max-w-[150px]">{m.senderName || senderId?.split('@')[0] || 'Unknown'}</span>
+                        <span className="truncate max-w-[200px]">{tailText}</span>
                         {activeAccount === 'ALL' && (
                           <>
                             <span className="mx-1.5">•</span>
-                            <span className="text-[#00a884] uppercase tracking-wider font-bold">Via {m.accountId}</span>
+                            <span className="text-wa-teal uppercase tracking-wider font-bold">Via {m.accountId}</span>
                           </>
                         )}
                       </span>
@@ -193,14 +202,16 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
                   {/* Bubble Pesan */}
                   <div className={`relative max-w-[85%] rounded-2xl p-2 pl-3 shadow-sm ${
                     isHighlighted 
-                      ? 'bg-[#005c4b] text-white border border-[#00a884]/40 ring-1 ring-[#00a884]/20' 
-                      : 'bg-wa-panel text-[#e9edef] border border-transparent'
+                      ? 'bg-wa-teal text-white border border-wa-teal/40 ring-1 ring-wa-teal/20' 
+                      : fromMe
+                        ? 'bg-wa-primary text-white border border-transparent'
+                        : 'bg-wa-panel text-wa-textDark border border-transparent'
                   } group transition-all duration-300 hover:shadow-md ${
-                    showTail ? 'rounded-tl-md' : 'mt-1'
+                    !showTail ? 'mt-1' : fromMe ? 'rounded-tr-md' : 'rounded-tl-md'
                   }`}>
                     
-                    {/* Sender Name in Group */}
-                    {m.isGroup && showTail && (
+                    {/* Sender Name in Group (hanya untuk pesan orang lain) */}
+                    {m.isGroup && showTail && !fromMe && (
                       <div className="flex items-center justify-between mb-1 pr-2">
                         <div className="text-wa-primary text-[13px] font-bold tracking-tight flex-1 min-w-0">
                           <div className="truncate">
@@ -215,7 +226,7 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
                     {onDeleteMessage && m.msg?.key?.id && (
                       <button 
                         onClick={() => onDeleteMessage(m.msg?.key?.id as string)}
-                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400 focus:outline-none bg-wa-panel/80 hover:bg-wa-panel rounded-full p-1.5 shadow-sm z-10"
+                        className={`absolute top-1 ${fromMe ? 'left-1' : 'right-1'} opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400 focus:outline-none bg-wa-bg hover:bg-wa-panel rounded-full p-1.5 shadow-sm z-10`}
                         title="Hapus Pesan"
                       >
                         <Trash2 size={13} />
@@ -227,14 +238,13 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Reply button clicked!', { remoteJid, senderId, accountId: m.accountId });
                         setReplyTarget({
                           jid: remoteJid || '',
-                          name: m.senderName || (m.isGroup ? m.groupName : senderId?.split('@')[0]) || 'Unknown',
+                          name: fromMe ? 'Anda' : (m.senderName || (m.isGroup ? m.groupName : senderId?.split('@')[0]) || 'Unknown'),
                           accountId: m.accountId
                         });
                       }}
-                      className="absolute top-1 right-8 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-[#00a884] focus:outline-none bg-wa-panel/80 hover:bg-wa-panel rounded-full p-1.5 shadow-sm z-20 cursor-pointer"
+                      className={`absolute top-1 ${fromMe ? 'left-8' : 'right-8'} opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-wa-teal focus:outline-none bg-wa-bg hover:bg-wa-panel rounded-full p-1.5 shadow-sm z-20 cursor-pointer`}
                       title="Balas Pesan"
                     >
                       <Reply size={13} />
