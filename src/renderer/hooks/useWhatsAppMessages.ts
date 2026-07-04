@@ -4,6 +4,7 @@ import { WhatsAppMessage } from '../types';
 export function useWhatsAppMessages(activeAccount: string | null) {
   const [messages, setMessages] = useState<Record<string, WhatsAppMessage[]>>({});
   const [rules, setRules] = useState<{id: number, keyword: string}[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   // Listen for new incoming messages
   useEffect(() => {
@@ -52,6 +53,7 @@ export function useWhatsAppMessages(activeAccount: string | null) {
   // Load Riwayat Pesan saat akun berganti
   useEffect(() => {
     if (activeAccount) {
+      setIsLoadingMessages(true);
       window.api.getMessages(activeAccount, 0)
         .then(history => {
           setMessages(prev => ({
@@ -59,7 +61,8 @@ export function useWhatsAppMessages(activeAccount: string | null) {
             [activeAccount]: history
           }));
         })
-        .catch(err => console.error("Gagal memuat riwayat pesan:", err));
+        .catch(err => console.error("Gagal memuat histori:", err))
+        .finally(() => setIsLoadingMessages(false));
     }
   }, [activeAccount]);
 
@@ -157,6 +160,7 @@ export function useWhatsAppMessages(activeAccount: string | null) {
     handleDeleteRule,
     handleDeleteMessage,
     handleClearMessages,
-    handleLoadMoreMessages
+    handleLoadMoreMessages,
+    isLoadingMessages
   };
 }

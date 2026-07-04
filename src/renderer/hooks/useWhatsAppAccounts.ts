@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../components/ui/ToastProvider';
 
 export function useWhatsAppAccounts() {
   const [savedAccounts, setSavedAccounts] = useState<string[]>([]);
   const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
   const [activeAccount, setActiveAccount] = useState<string | null>(null);
   const [qrs, setQrs] = useState<Record<string, string>>({});
+  const { showToast } = useToast();
 
   useEffect(() => {
     window.api.getSavedAccounts()
@@ -61,7 +63,7 @@ export function useWhatsAppAccounts() {
       setConnectedAccounts(prev => prev.filter(acc => acc !== id));
     } catch (err) {
       console.error("Gagal menghapus akun:", err);
-      alert("Gagal menghapus akun. Cek console log.");
+      showToast({ message: "Gagal menghapus akun. Cek console log.", type: 'error' });
     }
   };
 

@@ -33,7 +33,8 @@ export default function App() {
     handleDeleteRule,
     handleDeleteMessage,
     handleClearMessages,
-    handleLoadMoreMessages
+    handleLoadMoreMessages,
+    isLoadingMessages
   } = useWhatsAppMessages(activeAccount);
 
   // Tab 'ALL' dianggap selalu terkoneksi asalkan ada minimal 1 akun yang terkoneksi
@@ -70,14 +71,14 @@ export default function App() {
             <div className="flex items-center space-x-2 sm:space-x-4 text-[#aebac1] shrink-0">
               <button 
                 onClick={() => setIsBroadcastModalOpen(true)}
-                className="p-2 rounded-full hover:bg-wa-hover text-[#00a884] transition-colors flex items-center"
+                className="p-2 rounded-full hover:bg-wa-hover text-wa-primary transition-colors flex items-center"
                 title="Kirim Broadcast"
               >
                 <Megaphone size={20} className="mr-2" />
                 <span className="text-sm font-medium">Broadcast</span>
               </button>
-              <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><Search size={20} /></button>
-              <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><MoreVertical size={20} /></button>
+              {/* <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><Search size={20} /></button>
+              <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><MoreVertical size={20} /></button> */}
             </div>
           </div>
         </div>
@@ -135,6 +136,7 @@ export default function App() {
                         onDeleteMessage={handleDeleteMessage}
                         onClearMessages={() => handleClearMessages(true)}
                         onLoadMore={handleLoadMoreMessages}
+                        isLoading={isLoadingMessages}
                       />
                     </div>
                   </Panel>
@@ -157,6 +159,7 @@ export default function App() {
                         onDeleteMessage={handleDeleteMessage}
                         onClearMessages={() => handleClearMessages(false)}
                         onLoadMore={handleLoadMoreMessages}
+                        isLoading={isLoadingMessages}
                       />
                     </div>
                   </Panel>

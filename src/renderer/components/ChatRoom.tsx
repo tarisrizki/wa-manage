@@ -12,9 +12,10 @@ export interface ChatRoomProps {
   onDeleteMessage?: (msgKeyId: string) => void;
   onClearMessages?: () => void;
   onLoadMore?: () => void;
+  isLoading?: boolean;
 }
 
-export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessage, onClearMessages, onLoadMore }: ChatRoomProps) {
+export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessage, onClearMessages, onLoadMore, isLoading }: ChatRoomProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // State untuk membalas pesan
@@ -111,7 +112,15 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
             </div>
           </div>
 
-          {messages.length === 0 ? (
+          {isLoading && messages.length === 0 ? (
+            <div className="flex flex-col space-y-4 px-4 py-8">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+                  <div className="w-48 h-16 bg-wa-hover/50 animate-pulse rounded-2xl rounded-tl-md"></div>
+                </div>
+              ))}
+            </div>
+          ) : messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center h-full opacity-60 select-none mt-20">
               {title?.includes('Grup') ? (
                 <Users size={80} strokeWidth={1} className="text-gray-500 mb-6" />
@@ -193,7 +202,7 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
                     {/* Sender Name in Group */}
                     {m.isGroup && showTail && (
                       <div className="flex items-center justify-between mb-1 pr-2">
-                        <div className="text-[#53bdeb] text-[13px] font-semibold tracking-tight flex-1 min-w-0">
+                        <div className="text-wa-primary text-[13px] font-bold tracking-tight flex-1 min-w-0">
                           <div className="truncate">
                             {m.senderName || senderId?.split('@')[0] || 'Unknown'}
                           </div>
@@ -248,7 +257,7 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteMessag
                     </div>
                   
                     {/* Waktu */}
-                    <div className="absolute right-3 bottom-1.5 text-[10px] text-gray-400 font-medium">
+                    <div className="absolute right-3 bottom-1.5 text-[10px] text-wa-textMuted font-light">
                       {timeString}
                     </div>
                   </div>
