@@ -1,5 +1,7 @@
-import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings, GripVertical } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, MoreVertical, Smartphone, MonitorSmartphone, Plus, Settings, GripVertical, Megaphone } from 'lucide-react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
+import { AnimatePresence } from 'framer-motion';
 import bgDoodle from './assets/doodle.png';
 import { useWhatsAppAccounts } from './hooks/useWhatsAppAccounts';
 import { useWhatsAppMessages } from './hooks/useWhatsAppMessages';
@@ -9,8 +11,11 @@ import { Sidebar } from './components/Sidebar';
 import { ChatRoom } from './components/ChatRoom';
 import { QRScreen } from './components/QRScreen';
 import { RuleEngine } from './components/RuleEngine';
+import { BroadcastModal } from './components/BroadcastModal';
 
 export default function App() {
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+
   const {
     savedAccounts,
     connectedAccounts,
@@ -43,6 +48,15 @@ export default function App() {
            style={{ backgroundImage: `url(${bgDoodle})`, backgroundRepeat: 'repeat' }}>
       </div>
 
+      <AnimatePresence>
+        {isBroadcastModalOpen && activeAccount && (
+          <BroadcastModal 
+            activeAccount={activeAccount} 
+            onClose={() => setIsBroadcastModalOpen(false)} 
+          />
+        )}
+      </AnimatePresence>
+
       {activeAccount && (
         <div className="flex flex-col z-10 shrink-0">
           {/* Header Utama (membentang penuh) */}
@@ -57,11 +71,18 @@ export default function App() {
               </span>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4 text-[#aebac1] shrink-0">
+              <button 
+                onClick={() => setIsBroadcastModalOpen(true)}
+                className="p-2 rounded-full hover:bg-wa-hover text-[#00a884] transition-colors flex items-center"
+                title="Kirim Broadcast"
+              >
+                <Megaphone size={20} className="mr-2" />
+                <span className="text-sm font-medium">Broadcast</span>
+              </button>
               <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><Search size={20} /></button>
               <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><MoreVertical size={20} /></button>
             </div>
           </div>
-
         </div>
       )}
 

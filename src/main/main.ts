@@ -1,16 +1,20 @@
-import { app, BrowserWindow, ipcMain, Notification } from 'electron';
+import { app, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage } from 'electron';
 import * as path from 'path';
-import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount } from './whatsapp-manager';
+import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount, sendMessage, getGroups, simulateTyping } from './whatsapp-manager';
 import { reloadRulesCache } from './wa-rule-engine';
 import { initDatabase, getDatabase, deleteMessage, clearAllMessages, getMessages } from './database';
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 
 function createWindow() {
+  const iconPath = path.join(__dirname, '../../assets/icon.png');
+  const appIcon = nativeImage.createFromPath(iconPath);
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.join(__dirname, '../../assets/icon.png'),
+    icon: appIcon,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, // WAJIB true demi keamanan sesuai aturan pnew.md
@@ -29,10 +33,52 @@ function createWindow() {
   }
 }
 
+function createTray() {
+  const iconPath = path.join(__dirname, '../../assets/icon.png');
+  let trayIcon = nativeImage.createFromPath(iconPath);
+  
+  // Resize icon for Windows tray
+  if (process.platform === 'win32') {
+    trayIcon = trayIcon.resize({ width: 16, height: 16 });
+  }
+
+  tray = new Tray(trayIcon);
+  
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Buka WhatsApp Manager', click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        } else {
+          createWindow();
+        }
+      } 
+    },
+    { type: 'separator' },
+    { label: 'Keluar', click: () => {
+        app.quit();
+      } 
+    }
+  ]);
+
+  tray.setToolTip('WhatsApp Web Manager');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.focus();
+      } else {
+        mainWindow.show();
+      }
+    }
+  });
+}
+
 app.whenReady().then(() => {
   // [BUG FIX] Wajib di Windows 10/11 agar Native Notification bisa muncul
   if (process.platform === 'win32') {
-    app.setAppUserModelId(app.getName() || 'com.wamanage.desktop');
+    app.setAppUserModelId('com.wamanage.desktop');
   }
 
   // 1. Inisialisasi Database bawaan Node.js
@@ -40,6 +86,9 @@ app.whenReady().then(() => {
   
   // 2. Buat UI (Wajib dipanggil sebelum initWhatsAppManager agar mainWindow tidak null)
   createWindow();
+  
+  // Buat icon di system tray (taskbar pojok kanan)
+  createTray();
 
   // 3. Siapkan manajer sesi WhatsApp (Baileys)
   initWhatsAppManager(mainWindow);
@@ -62,8 +111,9 @@ app.on('before-quit', () => {
 ipcMain.handle('ping', () => 'pong');
 
 ipcMain.on('show-notification', (event, title, body) => {
+  const iconPath = path.join(__dirname, '../../assets/icon.png');
   // Memanfaatkan API Native OS bawaan Electron untuk notifikasi
-  new Notification({ title, body }).show();
+  new Notification({ title, body, icon: iconPath }).show();
 });
 
 ipcMain.on('add-wa-account', (event, accountId) => {
@@ -157,4 +207,19 @@ ipcMain.on('clear-messages', (event, accountId: string, isGroup?: boolean) => {
 // [FITUR BARU] Endpoint untuk memuat riwayat obrolan
 ipcMain.handle('get-messages', (event, accountId: string, offset?: number) => {
   return getMessages(accountId, offset || 0);
+});
+
+// [FITUR BARU] Endpoint untuk mengirim pesan balasan
+ipcMain.handle('send-message', async (event, accountId: string, jid: string, text: string, imageBuffer?: ArrayBuffer) => {
+  return await sendMessage(accountId, jid, text, imageBuffer);
+});
+
+// [FITUR BARU] Endpoint untuk mengambil daftar grup
+ipcMain.handle('get-groups', async (event, accountId: string) => {
+  return await getGroups(accountId);
+});
+
+// [ANTI-BAN] Endpoint untuk simulasi mengetik
+ipcMain.handle('simulate-typing', async (event, accountId: string, jid: string, durationMs: number) => {
+  return await simulateTyping(accountId, jid, durationMs);
 });

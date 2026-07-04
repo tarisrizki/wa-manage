@@ -27,7 +27,17 @@ export async function handleIncomingMessage(
     const isGroup = remoteJid.endsWith('@g.us');
     
     // Resolusi Nama Personal & Grup
-    const senderName = msg.pushName || (msg.key.participant || msg.key.remoteJid)?.split('@')[0] || 'Unknown';
+    const participantJid = msg.key.participant || msg.participant;
+    let senderName = msg.pushName;
+    if (!senderName) {
+      if (isGroup && participantJid) {
+        senderName = participantJid.split('@')[0];
+      } else if (!isGroup) {
+        senderName = remoteJid.split('@')[0];
+      } else {
+        senderName = 'Unknown';
+      }
+    }
     let groupName = null;
     
     if (isGroup) {

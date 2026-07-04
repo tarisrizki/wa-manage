@@ -41,6 +41,7 @@
     "autoprefixer": "^10.5.2",
     "electron": "^42.0.0",
     "electron-builder": "^25.0.0",
+    "ico-endec": "^0.1.6",
     "postcss": "^8.5.16",
     "tailwindcss": "^4.3.2",
     "typescript": "^5.5.0",

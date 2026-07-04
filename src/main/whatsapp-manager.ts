@@ -64,7 +64,8 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
     printQRInTerminal: false,
     logger: pino({ level: 'silent' }) as any,
     markOnlineOnConnect: false, // [ANTI-BAN] Jangan siarkan status "Online" terus menerus saat aplikasi berjalan di background
-    syncFullHistory: false // [ANTI-BAN] Mencegah unduhan riwayat penuh yang bisa membebani server dan dicurigai spam
+    syncFullHistory: false, // [ANTI-BAN] Mencegah unduhan riwayat penuh yang bisa membebani server dan dicurigai spam
+    browser: ['Mac OS', 'Safari', '10.15.7'], // [ANTI-BAN] Browser Fingerprint Spoofing (Menyamar sebagai pengguna Mac asli)
   });
 
   sock.ev.on('connection.update', (update) => {
@@ -225,5 +226,82 @@ export function cleanupWhatsAppManager() {
         activeSockets[accountId].end(undefined);
       } catch (e) {}
     }
+  }
+}
+
+// [FITUR BARU] Endpoint untuk mengirim pesan dari UI (Balasan atau Broadcast)
+export async function sendMessage(accountId: string, jid: string, text: string, imageBuffer?: Buffer | Uint8Array | ArrayBuffer): Promise<boolean> {
+  try {
+    const sock = activeSockets[accountId];
+    if (!sock) {
+      console.error(`[${accountId}] Gagal kirim pesan: Socket tidak aktif.`);
+      return false;
+    }
+    
+    // Format JID dengan benar (tambahkan @s.whatsapp.net jika belum ada dan bukan grup)
+    if (!jid.includes('@')) {
+      jid = `${jid}@s.whatsapp.net`;
+    }
+
+    console.log(`[${accountId}] SendMessage called. JID: ${jid}, hasImage: ${!!imageBuffer}`);
+
+    if (imageBuffer) {
+      console.log(`[${accountId}] Image buffer received, sending media...`);
+      // Convert ArrayBuffer to Node Buffer if necessary
+      const buffer = Buffer.isBuffer(imageBuffer) ? imageBuffer : Buffer.from(imageBuffer as any);
+      await sock.sendMessage(jid, { image: buffer, caption: text });
+      console.log(`[${accountId}] Image sent successfully.`);
+    } else {
+      // Jika tidak ada gambar, kirim sebagai pesan teks biasa
+      await sock.sendMessage(jid, { text });
+    }
+    
+    return true;
+  } catch (err) {
+    console.error(`[${accountId}] Gagal mengirim pesan ke ${jid}:`, err);
+    return false;
+  }
+}
+
+export async function getGroups(accountId: string): Promise<{ id: string; name: string }[]> {
+  try {
+    const sock = activeSockets[accountId];
+    if (!sock) {
+      console.error(`[${accountId}] Gagal menarik grup: Socket tidak aktif.`);
+      return [];
+    }
+    
+    // Tarik semua grup yang diikuti oleh user saat ini
+    const groups = await sock.groupFetchAllParticipating();
+    
+    // Format menjadi array yang mudah dirender di React
+    return Object.values(groups).map((group: any) => ({
+      id: group.id,
+      name: group.subject
+    }));
+  } catch (err) {
+    console.error(`[${accountId}] Gagal mengambil daftar grup:`, err);
+    return [];
+  }
+}
+
+// [ANTI-BAN] Simulasi mengetik agar akun terlihat seperti manusia asli
+export async function simulateTyping(accountId: string, jid: string, durationMs: number): Promise<boolean> {
+  try {
+    const sock = activeSockets[accountId];
+    if (!sock) return false;
+    
+    // Kirim status "Sedang mengetik..."
+    await sock.sendPresenceUpdate('composing', jid);
+    
+    // Tunggu sesuai durasi
+    await new Promise(resolve => setTimeout(resolve, durationMs));
+    
+    // Hentikan status mengetik
+    await sock.sendPresenceUpdate('paused', jid);
+    return true;
+  } catch (err) {
+    console.error(`[${accountId}] Gagal simulasi mengetik ke ${jid}:`, err);
+    return false;
   }
 }

@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('api', {
   getMessages: (accountId: string, offset?: number) => ipcRenderer.invoke('get-messages', accountId, offset),
   deleteMessage: (msgKeyId: string) => ipcRenderer.send('delete-message', msgKeyId),
   clearMessages: (accountId: string, isGroup?: boolean) => ipcRenderer.send('clear-messages', accountId, isGroup),
+  sendMessage: (accountId: string, jid: string, text: string, imageBuffer?: ArrayBuffer) => ipcRenderer.invoke('send-message', accountId, jid, text, imageBuffer),
+  getGroups: (accountId: string) => ipcRenderer.invoke('get-groups', accountId),
+  simulateTyping: (accountId: string, jid: string, durationMs: number) => ipcRenderer.invoke('simulate-typing', accountId, jid, durationMs),
   
   // Listener untuk pesan WhatsApp yang masuk
   onWhatsAppMessage: (callback: (data: any) => void) => {
