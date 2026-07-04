@@ -134,7 +134,12 @@ export function Sidebar({
                       {isConnected ? 'Online' : hasQR ? 'Scan QR' : 'Connecting'}
                     </span>
                     <button 
-                      onClick={(e) => onDeleteAccount(e, accId)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('Yakin ingin menghapus akun ini? Anda harus scan QR ulang jika ingin login kembali.')) {
+                          onDeleteAccount(e, accId);
+                        }
+                      }}
                       className="p-2 hover:bg-[#374c58] rounded-full text-wa-textMuted hover:text-wa-danger transition-colors cursor-pointer relative z-50"
                       title="Hapus Akun"
                     >

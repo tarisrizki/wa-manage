@@ -23,6 +23,7 @@ export function initDatabase() {
       sender_name TEXT,
       group_name TEXT,
       msg_key_id TEXT,
+      from_me BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -42,6 +43,12 @@ export function initDatabase() {
 
   try {
     db.exec("ALTER TABLE messages ADD COLUMN msg_key_id TEXT;");
+  } catch (e) {
+    // Abaikan jika kolom sudah ada
+  }
+
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN from_me BOOLEAN DEFAULT 0;");
   } catch (e) {
     // Abaikan jika kolom sudah ada
   }
@@ -145,7 +152,7 @@ export function getMessages(accountId: string, offset: number = 0) {
         key: {
           id: row.msg_key_id,
           remoteJid: row.remote_jid,
-          fromMe: false // Karena kita hanya menyimpan pesan masuk
+          fromMe: row.from_me === 1
         }
       }
     }));

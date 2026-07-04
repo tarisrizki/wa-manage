@@ -1,5 +1,7 @@
 # WA Multi-Account Desktop App
 
+> **Note on Storage Layer**: This application uses Node.js' built-in `node:sqlite` as its storage layer. This was explicitly chosen to avoid complex native-module build issues in Electron. Please note that `node:sqlite` is currently in "Release Candidate" status in Node.js and its API may be subject to change in future Node versions.
+
 A desktop application for managing multiple WhatsApp accounts in one centralized dashboard. This application allows users to connect multiple WhatsApp accounts, separate group chats from personal chats, and utilize custom notification rules.
 
 ## Features

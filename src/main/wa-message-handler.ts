@@ -21,7 +21,7 @@ export async function handleIncomingMessage(
   // [BUG FIX] Abaikan pesan status WhatsApp agar tidak masuk ke inbox personal
   if (msg.key.remoteJid === 'status@broadcast') return;
 
-  if (!msg.key.fromMe && m.type === 'notify') {
+  if (m.type === 'notify' || m.type === 'append') {
     const remoteJid = msg.key.remoteJid;
     // Identifikasi grup (terverifikasi: akhiran @g.us)
     const isGroup = remoteJid.endsWith('@g.us');
@@ -84,27 +84,21 @@ export async function handleIncomingMessage(
         const debugJson = JSON.stringify(msg.message, null, 2);
         console.log(`[DEBUG - Tipe Tak Tertangani]`, debugJson);
         
-        try {
-          const logFile = path.join(app.getPath('userData'), 'unhandled_messages.log');
-          fs.appendFileSync(logFile, `\n\n--- ${new Date().toISOString()} ---\n${debugJson}`);
-        } catch (e) {
-          console.error("Failed to write unhandled msg log", e);
-        }
-        
         textContent = UNHANDLED_MSG_TYPE;
       }
     }
     
-    console.log(`[${accountId}] Pesan baru dari ${senderName}${isGroup ? ` di grup ${groupName}` : ''}: "${textContent}"`);
+    const truncatedText = textContent.length > 100 ? textContent.substring(0, 100) + '...' : textContent;
+    console.log(`[${accountId}] Pesan ${msg.key.fromMe ? 'keluar' : 'baru'} ${msg.key.fromMe ? 'ke' : 'dari'} ${senderName}${isGroup ? ` di grup ${groupName}` : ''}: "${truncatedText}"`);
     
     // Simpan ke SQLite
     try {
       const db = getDatabase();
       if (textContent.trim() && textContent !== UNHANDLED_MSG_TYPE) {
          db.prepare(`
-           INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id) 
-           VALUES (?, ?, ?, ?, ?, ?, ?)
-         `).run(accountId, remoteJid, textContent, isGroup ? 1 : 0, senderName, groupName, msg.key?.id || null);
+           INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id, from_me) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         `).run(accountId, remoteJid, textContent, isGroup ? 1 : 0, senderName, groupName, msg.key?.id || null, msg.key.fromMe ? 1 : 0);
       }
     } catch (err) {
       console.error(`[${accountId}] Gagal menyimpan pesan ke DB`, err);

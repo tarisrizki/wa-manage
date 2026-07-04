@@ -32,7 +32,8 @@ export default function App() {
     handleAddRule,
     handleDeleteRule,
     handleDeleteMessage,
-    handleClearMessages
+    handleClearMessages,
+    handleLoadMoreMessages
   } = useWhatsAppMessages(activeAccount);
 
   // Tab 'ALL' dianggap selalu terkoneksi asalkan ada minimal 1 akun yang terkoneksi
@@ -137,6 +138,7 @@ export default function App() {
                         onDeleteRule={handleDeleteRule}
                         onDeleteMessage={handleDeleteMessage}
                         onClearMessages={() => handleClearMessages(true)}
+                        onLoadMore={handleLoadMoreMessages}
                       />
                     </div>
                   </Panel>
@@ -158,6 +160,7 @@ export default function App() {
                         onDeleteRule={handleDeleteRule}
                         onDeleteMessage={handleDeleteMessage}
                         onClearMessages={() => handleClearMessages(false)}
+                        onLoadMore={handleLoadMoreMessages}
                       />
                     </div>
                   </Panel>

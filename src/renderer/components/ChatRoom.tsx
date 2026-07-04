@@ -11,9 +11,10 @@ export interface ChatRoomProps {
   onDeleteRule?: (id: number) => void;
   onDeleteMessage?: (msgKeyId: string) => void;
   onClearMessages?: () => void;
+  onLoadMore?: () => void;
 }
 
-export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, onDeleteMessage, onClearMessages }: ChatRoomProps) {
+export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, onDeleteMessage, onClearMessages, onLoadMore }: ChatRoomProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // State untuk membalas pesan
@@ -56,17 +57,8 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
           <div className="flex justify-center mb-6 sticky top-2 z-20">
             <div className="bg-[#111b21]/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-white/5 flex items-center justify-between w-full max-w-sm">
               <span className="flex items-center text-[13px] text-gray-300 font-semibold tracking-wide">
-                {title ? (
-                  <>
-                    <span className="mr-2">{title.includes('Grup') ? '🏢' : '👤'}</span>
-                    {title.toUpperCase()}
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck size={14} className="mr-2 text-wa-textMuted" />
-                    PESAN TERENKRIPSI SECARA END-TO-END
-                  </>
-                )}
+                <span className="mr-2">{title?.includes('Grup') ? '🏢' : '👤'}</span>
+                {title ? title.toUpperCase() : ''}
               </span>
               {messages.length > 0 && onClearMessages && (
                 <button 
@@ -97,7 +89,18 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
               </p>
             </div>
           ) : (
-            messages.map((m, idx) => {
+            <>
+              {messages.length > 0 && onLoadMore && (
+                <div className="flex justify-center my-2">
+                  <button 
+                    onClick={onLoadMore}
+                    className="text-xs text-wa-textMuted hover:text-white bg-wa-panel hover:bg-wa-hover px-3 py-1.5 rounded-full transition-colors border border-wa-border"
+                  >
+                    Muat Pesan Lama
+                  </button>
+                </div>
+              )}
+              {messages.map((m, idx) => {
               const remoteJid = m.msg?.key?.remoteJid;
               const senderId = m.isGroup ? (m.msg?.key?.participant || remoteJid) : remoteJid;
               
@@ -226,8 +229,9 @@ export function ChatRoom({ title, messages, activeAccount, rules, onDeleteRule, 
                   </div>
                 </motion.div>
               )
-          })
-        )}
+            })}
+            </>
+          )}
 
         <div className="h-4"></div>
       </div>
