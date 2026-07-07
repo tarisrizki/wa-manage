@@ -99,6 +99,16 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
     setIsProcessing(false);
   };
 
+  // [BUG FIX] Escaping CSV yang benar. Sebelumnya hanya menghapus koma, sehingga:
+  // 1) Data tetap bisa rusak jika ada tanda kutip (") atau baris baru di nama grup.
+  // 2) Rentan "CSV/Formula Injection": jika nama grup diawali =, +, -, atau @, Excel/Google
+  //    Sheets bisa mengeksekusinya sebagai formula saat file dibuka.
+  const csvEscape = (value: string) => {
+    const str = String(value ?? '');
+    const guarded = /^[=+\-@]/.test(str) ? `'${str}` : str;
+    return `"${guarded.replace(/"/g, '""')}"`;
+  };
+
   const exportToCSV = () => {
     if (links.length === 0) return;
     
@@ -106,12 +116,14 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
     let csvContent = "Link Asli,Kode Invite,Nama Grup,Status,Pesan/Keterangan\n";
     
     links.forEach(link => {
-      // Membersihkan koma dari teks agar tidak merusak format CSV
-      const originalLink = link.originalLink.replace(/,/g, '');
-      const subject = (link.subject || '').replace(/,/g, ' ');
-      const message = (link.message || '').replace(/,/g, ' ');
-      
-      csvContent += `${originalLink},${link.code},${subject},${link.status},${message}\n`;
+      const row = [
+        csvEscape(link.originalLink),
+        csvEscape(link.code),
+        csvEscape(link.subject || ''),
+        csvEscape(link.status),
+        csvEscape(link.message || '')
+      ];
+      csvContent += row.join(',') + '\n';
     });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

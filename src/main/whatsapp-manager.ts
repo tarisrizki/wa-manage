@@ -1,4 +1,4 @@
-import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion } from '@whiskeysockets/baileys';
+import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion, WASocket } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
@@ -7,8 +7,13 @@ import { getDatabase } from './database';
 import { reloadRulesCache, rulesCache, clearRulesCache } from './wa-rule-engine';
 import { handleIncomingMessage } from './wa-message-handler';
 
+// [BUG FIX] Sebelumnya Record<string, any> — mematikan type-checking untuk objek
+// terpenting di seluruh aplikasi ini. `isReconnecting` adalah properti kustom yang
+// ditambahkan di luar tipe asli Baileys, jadi socket di-extend secara eksplisit.
+type ManagedSocket = WASocket & { isReconnecting?: boolean };
+
 // Menyimpan banyak socket WhatsApp dalam satu object, memungkinan multi-akun yang tak terbatas.
-const activeSockets: Record<string, any> = {};
+const activeSockets: Record<string, ManagedSocket> = {};
 
 // Melacak akun yang baru saja dihapus agar tidak melakukan reconnect otomatis
 const deletedAccounts: Set<string> = new Set();
@@ -22,6 +27,16 @@ export { reloadRulesCache };
 
 // Cache Promise versi WA agar jika ada multi-akun yang dimuat serentak, mereka menunggu 1 request yang sama (Anti Race-Condition)
 let waVersionPromise: Promise<[number, number, number]> | null = null;
+
+// [BUG FIX] Tipe `BaileysEventEmitter` bawaan Baileys mewajibkan nama event spesifik untuk
+// removeAllListeners(event), tanpa overload tanpa-argumen. Namun implementasi asli Baileys
+// (lib/Utils/event-buffer.js) memang membungkus `EventEmitter` bawaan Node, yang MENDUKUNG
+// removeAllListeners() tanpa argumen untuk membersihkan seluruh event sekaligus — inilah
+// perilaku yang benar-benar diinginkan di sini (bukan cuma 1 event). Cast diisolasi di satu
+// tempat dan didokumentasikan, alih-alih mengetik ulang seluruh socket sebagai `any`.
+function removeAllSocketListeners(sock: ManagedSocket) {
+  (sock.ev as unknown as NodeJS.EventEmitter).removeAllListeners();
+}
 
 export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWindow | null, isManualAdd: boolean = false) {
   // Jika akun ditambahkan ulang secara manual dari UI, pastikan flag hapus di-reset agar bisa digunakan kembali
@@ -197,7 +212,7 @@ export function deleteWhatsAppAccount(accountId: string) {
     // 1. Putus koneksi soket jika masih aktif
     if (activeSockets[accountId]) {
       try {
-        activeSockets[accountId].ev.removeAllListeners();
+        removeAllSocketListeners(activeSockets[accountId]);
         // [BUG FIX] Penutupan yang benar untuk Baileys Socket
         activeSockets[accountId].end(undefined);
       } catch (e) {}
@@ -221,7 +236,7 @@ export function cleanupWhatsAppManager() {
   for (const accountId in activeSockets) {
     if (activeSockets[accountId]) {
       try {
-        activeSockets[accountId].ev.removeAllListeners();
+        removeAllSocketListeners(activeSockets[accountId]);
         // [BUG FIX] Penutupan yang benar untuk Baileys Socket
         activeSockets[accountId].end(undefined);
       } catch (e) {}

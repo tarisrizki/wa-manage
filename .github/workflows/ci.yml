@@ -15,7 +15,11 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '20.x'
+        # node:sqlite butuh Node >=22.5 (baru RC di >=25.7). Node 20.x tidak punya modul ini
+        # sama sekali, jadi step "test" di bawah akan gagal saat mengimpor ./database.
+        # Menyamakan dengan versi Node yang dibundel Electron 42 (Node 24) agar CI merefleksikan
+        # runtime asli aplikasi.
+        node-version: '24.x'
     - run: npm ci
     - run: npm run build
     - run: npm run typecheck

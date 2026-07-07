@@ -1,0 +1,210 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 13fcf92..2c339b5 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -15,7 +15,11 @@ jobs:
+     - name: Use Node.js
+       uses: actions/setup-node@v3
+       with:
+-        node-version: '20.x'
++        # node:sqlite butuh Node >=22.5 (baru RC di >=25.7). Node 20.x tidak punya modul ini
++        # sama sekali, jadi step "test" di bawah akan gagal saat mengimpor ./database.
++        # Menyamakan dengan versi Node yang dibundel Electron 42 (Node 24) agar CI merefleksikan
++        # runtime asli aplikasi.
++        node-version: '24.x'
+     - run: npm ci
+     - run: npm run build
+     - run: npm run typecheck
+diff --git a/.gitignore b/.gitignore
+index e446e9d60dbe079605da52846c18f1746e7ebbaa..9eef461f51af2d84d9a83c735f2f6a0766b4d665 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,9 +1,8 @@
+ node_modules/
+ dist/
+ .env
+ .env.local
+ .DS_Store
+ release/
+ *.log
+-*.sqlite*
++*.sqlite*
+diff --git a/src/main/whatsapp-manager.ts b/src/main/whatsapp-manager.ts
+index 7c7d76f..22327fc 100644
+--- a/src/main/whatsapp-manager.ts
++++ b/src/main/whatsapp-manager.ts
+@@ -1,4 +1,4 @@
+-import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion } from '@whiskeysockets/baileys';
++import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion, WASocket } from '@whiskeysockets/baileys';
+ import pino from 'pino';
+ import { app, BrowserWindow } from 'electron';
+ import * as path from 'path';
+@@ -7,8 +7,13 @@ import { getDatabase } from './database';
+ import { reloadRulesCache, rulesCache, clearRulesCache } from './wa-rule-engine';
+ import { handleIncomingMessage } from './wa-message-handler';
+ 
++// [BUG FIX] Sebelumnya Record<string, any> — mematikan type-checking untuk objek
++// terpenting di seluruh aplikasi ini. `isReconnecting` adalah properti kustom yang
++// ditambahkan di luar tipe asli Baileys, jadi socket di-extend secara eksplisit.
++type ManagedSocket = WASocket & { isReconnecting?: boolean };
++
+ // Menyimpan banyak socket WhatsApp dalam satu object, memungkinan multi-akun yang tak terbatas.
+-const activeSockets: Record<string, any> = {};
++const activeSockets: Record<string, ManagedSocket> = {};
+ 
+ // Melacak akun yang baru saja dihapus agar tidak melakukan reconnect otomatis
+ const deletedAccounts: Set<string> = new Set();
+@@ -23,6 +28,16 @@ export { reloadRulesCache };
+ // Cache Promise versi WA agar jika ada multi-akun yang dimuat serentak, mereka menunggu 1 request yang sama (Anti Race-Condition)
+ let waVersionPromise: Promise<[number, number, number]> | null = null;
+ 
++// [BUG FIX] Tipe `BaileysEventEmitter` bawaan Baileys mewajibkan nama event spesifik untuk
++// removeAllListeners(event), tanpa overload tanpa-argumen. Namun implementasi asli Baileys
++// (lib/Utils/event-buffer.js) memang membungkus `EventEmitter` bawaan Node, yang MENDUKUNG
++// removeAllListeners() tanpa argumen untuk membersihkan seluruh event sekaligus — inilah
++// perilaku yang benar-benar diinginkan di sini (bukan cuma 1 event). Cast diisolasi di satu
++// tempat dan didokumentasikan, alih-alih mengetik ulang seluruh socket sebagai `any`.
++function removeAllSocketListeners(sock: ManagedSocket) {
++  (sock.ev as unknown as NodeJS.EventEmitter).removeAllListeners();
++}
++
+ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWindow | null, isManualAdd: boolean = false) {
+   // Jika akun ditambahkan ulang secara manual dari UI, pastikan flag hapus di-reset agar bisa digunakan kembali
+   if (isManualAdd) {
+@@ -197,7 +212,7 @@ export function deleteWhatsAppAccount(accountId: string) {
+     // 1. Putus koneksi soket jika masih aktif
+     if (activeSockets[accountId]) {
+       try {
+-        activeSockets[accountId].ev.removeAllListeners();
++        removeAllSocketListeners(activeSockets[accountId]);
+         // [BUG FIX] Penutupan yang benar untuk Baileys Socket
+         activeSockets[accountId].end(undefined);
+       } catch (e) {}
+@@ -221,7 +236,7 @@ export function cleanupWhatsAppManager() {
+   for (const accountId in activeSockets) {
+     if (activeSockets[accountId]) {
+       try {
+-        activeSockets[accountId].ev.removeAllListeners();
++        removeAllSocketListeners(activeSockets[accountId]);
+         // [BUG FIX] Penutupan yang benar untuk Baileys Socket
+         activeSockets[accountId].end(undefined);
+       } catch (e) {}
+diff --git a/src/renderer/components/JoinGroupCSVModal.tsx b/src/renderer/components/JoinGroupCSVModal.tsx
+index 30c3aa9..1c82e35 100644
+--- a/src/renderer/components/JoinGroupCSVModal.tsx
++++ b/src/renderer/components/JoinGroupCSVModal.tsx
+@@ -99,6 +99,16 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
+     setIsProcessing(false);
+   };
+ 
++  // [BUG FIX] Escaping CSV yang benar. Sebelumnya hanya menghapus koma, sehingga:
++  // 1) Data tetap bisa rusak jika ada tanda kutip (") atau baris baru di nama grup.
++  // 2) Rentan "CSV/Formula Injection": jika nama grup diawali =, +, -, atau @, Excel/Google
++  //    Sheets bisa mengeksekusinya sebagai formula saat file dibuka.
++  const csvEscape = (value: string) => {
++    const str = String(value ?? '');
++    const guarded = /^[=+\-@]/.test(str) ? `'${str}` : str;
++    return `"${guarded.replace(/"/g, '""')}"`;
++  };
++
+   const exportToCSV = () => {
+     if (links.length === 0) return;
+     
+@@ -106,12 +116,14 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
+     let csvContent = "Link Asli,Kode Invite,Nama Grup,Status,Pesan/Keterangan\n";
+     
+     links.forEach(link => {
+-      // Membersihkan koma dari teks agar tidak merusak format CSV
+-      const originalLink = link.originalLink.replace(/,/g, '');
+-      const subject = (link.subject || '').replace(/,/g, ' ');
+-      const message = (link.message || '').replace(/,/g, ' ');
+-      
+-      csvContent += `${originalLink},${link.code},${subject},${link.status},${message}\n`;
++      const row = [
++        csvEscape(link.originalLink),
++        csvEscape(link.code),
++        csvEscape(link.subject || ''),
++        csvEscape(link.status),
++        csvEscape(link.message || '')
++      ];
++      csvContent += row.join(',') + '\n';
+     });
+     
+     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+diff --git a/src/renderer/hooks/useWhatsAppMessages.ts b/src/renderer/hooks/useWhatsAppMessages.ts
+index 8c99e04..b082d4a 100644
+--- a/src/renderer/hooks/useWhatsAppMessages.ts
++++ b/src/renderer/hooks/useWhatsAppMessages.ts
+@@ -1,10 +1,14 @@
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useRef } from 'react';
+ import { WhatsAppMessage } from '../types';
+ 
+ export function useWhatsAppMessages(activeAccount: string | null) {
+   const [messages, setMessages] = useState<Record<string, WhatsAppMessage[]>>({});
+   const [rules, setRules] = useState<{id: number, keyword: string}[]>([]);
+   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
++  // [BUG FIX] Race condition guard: mencegah beberapa event scroll beruntun memicu
++  // beberapa panggilan getMessages() bersamaan dengan offset yang sama (menyebabkan
++  // pesan lama ter-duplikasi di panel chat).
++  const isLoadingMoreRef = useRef(false);
+ 
+   // Listen for new incoming messages
+   useEffect(() => {
+@@ -67,20 +71,22 @@ export function useWhatsAppMessages(activeAccount: string | null) {
+   }, [activeAccount]);
+ 
+   const handleLoadMoreMessages = async () => {
+-    if (activeAccount) {
++    if (!activeAccount || isLoadingMoreRef.current) return;
++    isLoadingMoreRef.current = true;
++    try {
+       const currentMsgs = messages[activeAccount] || [];
+       const offset = currentMsgs.length;
+-      try {
+-        const moreHistory = await window.api.getMessages(activeAccount, offset);
+-        if (moreHistory.length > 0) {
+-          setMessages(prev => ({
+-            ...prev,
+-            [activeAccount]: [...moreHistory, ...(prev[activeAccount] || [])]
+-          }));
+-        }
+-      } catch (err) {
+-        console.error("Gagal memuat lebih banyak pesan:", err);
++      const moreHistory = await window.api.getMessages(activeAccount, offset);
++      if (moreHistory.length > 0) {
++        setMessages(prev => ({
++          ...prev,
++          [activeAccount]: [...moreHistory, ...(prev[activeAccount] || [])]
++        }));
+       }
++    } catch (err) {
++      console.error("Gagal memuat lebih banyak pesan:", err);
++    } finally {
++      isLoadingMoreRef.current = false;
+     }
+   };
+ 
+diff --git a/vite.config.ts b/vite.config.ts
+index 323569d..492c62b 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -1,4 +1,4 @@
+-import { defineConfig } from 'vite';
++import { defineConfig } from 'vitest/config';
+ import react from '@vitejs/plugin-react';
+ import path from 'path';
+ 
+@@ -15,4 +15,12 @@ export default defineConfig({
+       '@': path.resolve(__dirname, './src/renderer'),
+     },
+   },
++  test: {
++    // [BUG FIX] Tanpa ini, setelah `npm run build` menghasilkan dist/main/*.test.js
++    // (hasil kompilasi CommonJS dari tsconfig.main.json), Vitest ikut menemukan dan
++    // menjalankan file tersebut lalu gagal: "Vitest cannot be imported in a CommonJS
++    // module using require()". CI menjalankan build SEBELUM test di job yang sama,
++    // jadi kegagalan ini nyata terjadi di CI, bukan cuma teori.
++    exclude: ['**/node_modules/**', '**/dist/**'],
++  },
+ });

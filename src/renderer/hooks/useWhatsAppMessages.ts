@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { WhatsAppMessage } from '../types';
 
 export function useWhatsAppMessages(activeAccount: string | null) {
   const [messages, setMessages] = useState<Record<string, WhatsAppMessage[]>>({});
   const [rules, setRules] = useState<{id: number, keyword: string}[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  // [BUG FIX] Race condition guard: mencegah beberapa event scroll beruntun memicu
+  // beberapa panggilan getMessages() bersamaan dengan offset yang sama (menyebabkan
+  // pesan lama ter-duplikasi di panel chat).
+  const isLoadingMoreRef = useRef(false);
 
   // Listen for new incoming messages
   useEffect(() => {
@@ -67,20 +71,22 @@ export function useWhatsAppMessages(activeAccount: string | null) {
   }, [activeAccount]);
 
   const handleLoadMoreMessages = async () => {
-    if (activeAccount) {
+    if (!activeAccount || isLoadingMoreRef.current) return;
+    isLoadingMoreRef.current = true;
+    try {
       const currentMsgs = messages[activeAccount] || [];
       const offset = currentMsgs.length;
-      try {
-        const moreHistory = await window.api.getMessages(activeAccount, offset);
-        if (moreHistory.length > 0) {
-          setMessages(prev => ({
-            ...prev,
-            [activeAccount]: [...moreHistory, ...(prev[activeAccount] || [])]
-          }));
-        }
-      } catch (err) {
-        console.error("Gagal memuat lebih banyak pesan:", err);
+      const moreHistory = await window.api.getMessages(activeAccount, offset);
+      if (moreHistory.length > 0) {
+        setMessages(prev => ({
+          ...prev,
+          [activeAccount]: [...moreHistory, ...(prev[activeAccount] || [])]
+        }));
       }
+    } catch (err) {
+      console.error("Gagal memuat lebih banyak pesan:", err);
+    } finally {
+      isLoadingMoreRef.current = false;
     }
   };
 
