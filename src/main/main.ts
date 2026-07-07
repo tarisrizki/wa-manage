@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage } from 'electron';
 import * as path from 'path';
-import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount, sendMessage, getGroups, simulateTyping } from './whatsapp-manager';
+import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount, sendMessage, getGroups, simulateTyping, joinGroupByCode } from './whatsapp-manager';
 import { reloadRulesCache } from './wa-rule-engine';
 import { initDatabase, getDatabase, deleteMessage, clearAllMessages, getMessages } from './database';
 
@@ -222,4 +222,9 @@ ipcMain.handle('get-groups', async (event, accountId: string) => {
 // [ANTI-BAN] Endpoint untuk simulasi mengetik
 ipcMain.handle('simulate-typing', async (event, accountId: string, jid: string, durationMs: number) => {
   return await simulateTyping(accountId, jid, durationMs);
+});
+
+// [FITUR BARU] Endpoint untuk join grup dari kode undangan
+ipcMain.handle('join-group-by-code', async (event, accountId: string, code: string) => {
+  return await joinGroupByCode(accountId, code);
 });

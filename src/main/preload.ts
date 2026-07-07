@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
   sendMessage: (accountId: string, jid: string, text: string, imageBuffer?: ArrayBuffer) => ipcRenderer.invoke('send-message', accountId, jid, text, imageBuffer),
   getGroups: (accountId: string) => ipcRenderer.invoke('get-groups', accountId),
   simulateTyping: (accountId: string, jid: string, durationMs: number) => ipcRenderer.invoke('simulate-typing', accountId, jid, durationMs),
+  joinGroupByCode: (accountId: string, code: string) => ipcRenderer.invoke('join-group-by-code', accountId, code),
   
   // Listener untuk pesan WhatsApp yang masuk
   onWhatsAppMessage: (callback: (data: any) => void) => {

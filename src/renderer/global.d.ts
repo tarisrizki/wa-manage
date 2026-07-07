@@ -19,6 +19,7 @@ declare global {
       sendMessage: (accountId: string, jid: string, text: string, imageBuffer?: ArrayBuffer) => Promise<boolean>;
       getGroups: (accountId: string) => Promise<{ id: string; name: string }[]>;
       simulateTyping: (accountId: string, jid: string, durationMs: number) => Promise<boolean>;
+      joinGroupByCode: (accountId: string, code: string) => Promise<{ success: boolean, reason?: string, groupId?: string, subject?: string }>;
       onWhatsAppMessage: (callback: (data: any) => void) => () => void;
       onWhatsAppQR: (callback: (data: { accountId: string, qr: string }) => void) => () => void;
       onWhatsAppConnected: (callback: (data: { accountId: string }) => void) => () => void;

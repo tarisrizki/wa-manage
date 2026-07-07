@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Smartphone, GripVertical, Megaphone, MonitorSmartphone } from 'lucide-react';
+import { Smartphone, GripVertical, Megaphone, MonitorSmartphone, Users } from 'lucide-react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { AnimatePresence } from 'framer-motion';
 
@@ -12,9 +12,11 @@ import { ChatRoom } from './components/ChatRoom';
 import { QRScreen } from './components/QRScreen';
 import { RuleEngine } from './components/RuleEngine';
 import { BroadcastModal } from './components/BroadcastModal';
+import { JoinGroupCSVModal } from './components/JoinGroupCSVModal';
 
 export default function App() {
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [isJoinGroupModalOpen, setIsJoinGroupModalOpen] = useState(false);
 
   const {
     savedAccounts,
@@ -53,6 +55,12 @@ export default function App() {
             onClose={() => setIsBroadcastModalOpen(false)} 
           />
         )}
+        {isJoinGroupModalOpen && activeAccount && (
+          <JoinGroupCSVModal
+            activeAccount={activeAccount}
+            onClose={() => setIsJoinGroupModalOpen(false)}
+          />
+        )}
       </AnimatePresence>
 
       {activeAccount && (
@@ -70,6 +78,14 @@ export default function App() {
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4 text-[#aebac1] shrink-0">
               <button 
+                onClick={() => setIsJoinGroupModalOpen(true)}
+                className="p-2 rounded-full hover:bg-wa-hover text-wa-primary transition-colors flex items-center"
+                title="Join Grup dari CSV"
+              >
+                <Users size={20} className="mr-2" />
+                <span className="text-sm font-medium">Join Grup</span>
+              </button>
+              <button 
                 onClick={() => setIsBroadcastModalOpen(true)}
                 className="p-2 rounded-full hover:bg-wa-hover text-wa-primary transition-colors flex items-center"
                 title="Kirim Broadcast"
@@ -77,8 +93,6 @@ export default function App() {
                 <Megaphone size={20} className="mr-2" />
                 <span className="text-sm font-medium">Broadcast</span>
               </button>
-              {/* <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><Search size={20} /></button>
-              <button className="p-2 rounded-full hover:bg-wa-hover transition-colors"><MoreVertical size={20} /></button> */}
             </div>
           </div>
         </div>

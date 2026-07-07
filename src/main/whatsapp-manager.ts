@@ -305,3 +305,37 @@ export async function simulateTyping(accountId: string, jid: string, durationMs:
     return false;
   }
 }
+
+// [FITUR BARU] Endpoint untuk bergabung dengan grup melalui invite code
+export async function joinGroupByCode(accountId: string, inviteCode: string): Promise<{ success: boolean, reason?: string, groupId?: string, subject?: string }> {
+  try {
+    const sock = activeSockets[accountId];
+    if (!sock) {
+      console.error(`[${accountId}] Gagal join grup: Socket tidak aktif.`);
+      return { success: false, reason: 'socket_not_active' };
+    }
+
+    console.log(`[${accountId}] Mencoba mendapatkan info grup untuk kode: ${inviteCode}`);
+    const groupInfo = await sock.groupGetInviteInfo(inviteCode);
+    
+    if (!groupInfo) {
+      return { success: false, reason: 'invalid_link' };
+    }
+
+    console.log(`[${accountId}] Info grup: ${groupInfo.subject}, requireApproval: ${groupInfo.joinApprovalMode}`);
+    
+    // Jika grup membutuhkan persetujuan admin, skip.
+    if (groupInfo.joinApprovalMode) {
+      return { success: false, reason: 'require_approval', subject: groupInfo.subject };
+    }
+
+    // Join grup
+    const response = await sock.groupAcceptInvite(inviteCode);
+    console.log(`[${accountId}] Berhasil join grup ${groupInfo.subject}, ID: ${response}`);
+    
+    return { success: true, groupId: response, subject: groupInfo.subject };
+  } catch (err: any) {
+    console.error(`[${accountId}] Gagal join grup via kode ${inviteCode}:`, err);
+    return { success: false, reason: err?.message || 'unknown_error' };
+  }
+}
