@@ -31,6 +31,8 @@ export default function App() {
   const {
     rules,
     filteredMessages,
+    isFilterEnabled,
+    setIsFilterEnabled,
     handleAddRule,
     handleDeleteRule,
     handleDeleteMessage,
@@ -138,6 +140,8 @@ export default function App() {
                     <div className="h-full flex flex-col bg-wa-chatBg overflow-hidden">
                       <RuleEngine 
                         rules={rules} 
+                        isFilterEnabled={isFilterEnabled}
+                        setIsFilterEnabled={setIsFilterEnabled}
                         onAddRule={handleAddRule} 
                         onDeleteRule={handleDeleteRule} 
                       />

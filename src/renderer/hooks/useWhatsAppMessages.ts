@@ -5,6 +5,7 @@ export function useWhatsAppMessages(activeAccount: string | null) {
   const [messages, setMessages] = useState<Record<string, WhatsAppMessage[]>>({});
   const [rules, setRules] = useState<{id: number, keyword: string}[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isFilterEnabled, setIsFilterEnabled] = useState(false);
   // [BUG FIX] Race condition guard: mencegah beberapa event scroll beruntun memicu
   // beberapa panggilan getMessages() bersamaan dengan offset yang sama (menyebabkan
   // pesan lama ter-duplikasi di panel chat).
@@ -143,11 +144,11 @@ export function useWhatsAppMessages(activeAccount: string | null) {
   };
 
   const filteredMessages = activeAccount ? (messages[activeAccount] || []).filter(msg => {
-    // Sesuai permintaan: Filter KHUSUS untuk Grup.
     // Pesan pribadi (!msg.isGroup) selalu tampil semua tanpa difilter.
     if (!msg.isGroup) return true;
-
-    if (!rules || rules.length === 0) return true;
+    
+    // Jika toggle filter dimatikan atau tidak ada rule, tampilkan semua
+    if (!isFilterEnabled || !rules || rules.length === 0) return true;
     
     // Gunakan textContent yang sudah disediakan dari backend/database
     const textLower = (msg.textContent || '').toLowerCase();
@@ -162,6 +163,8 @@ export function useWhatsAppMessages(activeAccount: string | null) {
     messages,
     rules,
     filteredMessages,
+    isFilterEnabled,
+    setIsFilterEnabled,
     handleAddRule,
     handleDeleteRule,
     handleDeleteMessage,

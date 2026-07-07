@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, Eye, EyeOff } from 'lucide-react';
 import { useToast } from './ui/ToastProvider';
 
 export interface RuleEngineProps {
   rules: {id: number, keyword: string}[];
+  isFilterEnabled: boolean;
+  setIsFilterEnabled: (val: boolean) => void;
   onAddRule: (keyword: string) => void;
   onDeleteRule: (id: number) => void;
 }
 
-export function RuleEngine({ rules, onAddRule, onDeleteRule }: RuleEngineProps) {
+export function RuleEngine({ rules, isFilterEnabled, setIsFilterEnabled, onAddRule, onDeleteRule }: RuleEngineProps) {
   const [newKeyword, setNewKeyword] = useState('');
   const { showToast } = useToast();
 
@@ -28,7 +30,7 @@ export function RuleEngine({ rules, onAddRule, onDeleteRule }: RuleEngineProps) 
           <Filter size={15} className="text-wa-textMuted mr-2 shrink-0" />
           <input 
             type="text" 
-            placeholder="Saring obrolan grup..." 
+            placeholder="Tambah keyword notifikasi..." 
             value={newKeyword}
             onChange={(e) => setNewKeyword(e.target.value)}
             className="bg-transparent w-full text-wa-textDark placeholder:text-wa-textMuted outline-none text-[13.5px]"
@@ -43,6 +45,21 @@ export function RuleEngine({ rules, onAddRule, onDeleteRule }: RuleEngineProps) 
             Tambah
           </button>
         )}
+        
+        <div className="ml-3 pl-3 border-l border-wa-border flex items-center shrink-0">
+          <button
+            onClick={() => setIsFilterEnabled(!isFilterEnabled)}
+            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+              isFilterEnabled 
+                ? 'bg-wa-primary/10 text-wa-primary border border-wa-primary/30' 
+                : 'bg-wa-panel text-wa-textMuted border border-transparent hover:text-wa-textDark'
+            }`}
+            title={isFilterEnabled ? "Filter aktif: Menyembunyikan obrolan lain" : "Filter nonaktif: Menampilkan semua obrolan"}
+          >
+            {isFilterEnabled ? <Eye size={14} /> : <EyeOff size={14} />}
+            <span>Saring Tampilan</span>
+          </button>
+        </div>
       </div>
 
       {/* Daftar Filter Aktif */}
