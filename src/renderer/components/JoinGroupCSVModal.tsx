@@ -88,9 +88,9 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
       
       setProgress(Math.round(((i + 1) / links.length) * 100));
 
-      // Delay to avoid ban (25 to 45 seconds for newly created/fresh accounts)
+      // Delay to avoid ban (12 to 25 seconds to balance speed and safety)
       if (i < links.length - 1) {
-        const delay = Math.floor(Math.random() * (45000 - 25000 + 1)) + 25000;
+        const delay = Math.floor(Math.random() * (25000 - 12000 + 1)) + 12000;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -165,7 +165,7 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
                 <br /><br />
                 <span className="text-yellow-500 font-medium flex items-center">
                   <AlertCircle size={16} className="inline mr-1" />
-                  Mode Keamanan Aktif: Jeda waktu antara 25-45 detik diberlakukan antar join grup untuk melindungi akun WA baru dari pemblokiran (banned).
+                  Mode Keamanan Aktif: Jeda waktu antara 12-25 detik diberlakukan antar join grup untuk melindungi akun WA dari pemblokiran (banned).
                 </span>
               </p>
               <div 
