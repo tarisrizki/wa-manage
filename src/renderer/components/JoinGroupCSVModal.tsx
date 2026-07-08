@@ -18,6 +18,7 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
   const [links, setLinks] = useState<GroupLink[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [speedMode, setSpeedMode] = useState<'safe' | 'normal' | 'fast'>('safe');
   const [summary, setSummary] = useState<{ total: number, success: number, skipped: number, failed: number } | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,9 +89,20 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
       
       setProgress(Math.round(((i + 1) / links.length) * 100));
 
-      // Delay to avoid ban (12 to 25 seconds to balance speed and safety)
+      // Delay to avoid ban based on selected speed
       if (i < links.length - 1) {
-        const delay = Math.floor(Math.random() * (25000 - 12000 + 1)) + 12000;
+        let minDelay = 25000;
+        let maxDelay = 45000;
+        
+        if (speedMode === 'fast') {
+          minDelay = 5000;
+          maxDelay = 12000;
+        } else if (speedMode === 'normal') {
+          minDelay = 12000;
+          maxDelay = 25000;
+        }
+        
+        const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -162,12 +174,58 @@ export function JoinGroupCSVModal({ activeAccount, onClose }: JoinGroupCSVModalP
             <div className="mb-6">
               <p className="text-sm text-[#8696a0] mb-4">
                 Unggah file CSV yang berisi link grup WhatsApp. Sistem akan otomatis mengekstrak link yang mengandung <code>chat.whatsapp.com/KODE</code> dan melakukan proses join secara bergilir. Grup yang membutuhkan persetujuan admin akan otomatis dilewati.
-                <br /><br />
-                <span className="text-yellow-500 font-medium flex items-center">
-                  <AlertCircle size={16} className="inline mr-1" />
-                  Mode Keamanan Aktif: Jeda waktu antara 12-25 detik diberlakukan antar join grup untuk melindungi akun WA dari pemblokiran (banned).
-                </span>
               </p>
+              
+              <div className="mb-4 bg-[#202c33] border border-[#313d45] rounded-lg p-4">
+                <label className="block text-sm font-medium text-white mb-2">Kecepatan Bergabung (Anti-Ban):</label>
+                <div className="flex space-x-3">
+                  <label className={`flex items-center p-2 rounded-md cursor-pointer border transition-colors ${speedMode === 'safe' ? 'border-wa-primary bg-wa-primary/10' : 'border-[#313d45] hover:border-wa-textMuted'}`}>
+                    <input type="radio" name="speed" value="safe" checked={speedMode === 'safe'} onChange={() => setSpeedMode('safe')} className="hidden" />
+                    <span className="text-wa-primary mr-2">🟢</span>
+                    <div>
+                      <div className="text-sm font-medium text-white">Aman</div>
+                      <div className="text-xs text-wa-textMuted">25-45 detik</div>
+                    </div>
+                  </label>
+                  <label className={`flex items-center p-2 rounded-md cursor-pointer border transition-colors ${speedMode === 'normal' ? 'border-yellow-500 bg-yellow-500/10' : 'border-[#313d45] hover:border-wa-textMuted'}`}>
+                    <input type="radio" name="speed" value="normal" checked={speedMode === 'normal'} onChange={() => setSpeedMode('normal')} className="hidden" />
+                    <span className="text-yellow-500 mr-2">🟡</span>
+                    <div>
+                      <div className="text-sm font-medium text-white">Normal</div>
+                      <div className="text-xs text-wa-textMuted">12-25 detik</div>
+                    </div>
+                  </label>
+                  <label className={`flex items-center p-2 rounded-md cursor-pointer border transition-colors ${speedMode === 'fast' ? 'border-red-500 bg-red-500/10' : 'border-[#313d45] hover:border-wa-textMuted'}`}>
+                    <input type="radio" name="speed" value="fast" checked={speedMode === 'fast'} onChange={() => setSpeedMode('fast')} className="hidden" />
+                    <span className="text-red-500 mr-2">🔴</span>
+                    <div>
+                      <div className="text-sm font-medium text-white">Ngebut</div>
+                      <div className="text-xs text-wa-textMuted">5-12 detik</div>
+                    </div>
+                  </label>
+                </div>
+                <div className="mt-3">
+                  {speedMode === 'safe' && (
+                    <span className="text-wa-primary text-xs font-medium flex items-center">
+                      <CheckCircle size={14} className="mr-1" />
+                      Sangat direkomendasikan untuk akun WhatsApp baru.
+                    </span>
+                  )}
+                  {speedMode === 'normal' && (
+                    <span className="text-yellow-500 text-xs font-medium flex items-center">
+                      <AlertCircle size={14} className="mr-1" />
+                      Risiko sedang. Hindari memproses lebih dari 20 grup sekaligus.
+                    </span>
+                  )}
+                  {speedMode === 'fast' && (
+                    <span className="text-red-500 text-xs font-medium flex items-center">
+                      <AlertCircle size={14} className="mr-1" />
+                      Risiko BANNED sangat tinggi! Hanya gunakan pada akun tua/kebal.
+                    </span>
+                  )}
+                </div>
+              </div>
+
               <div 
                 className="border-2 border-dashed border-[#313d45] rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-[#202c33] hover:border-wa-primary transition-all cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
