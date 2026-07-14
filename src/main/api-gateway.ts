@@ -13,6 +13,16 @@ let server: Server | null = null;
 let currentApiKey = '';
 const PORT = 3000;
 
+export const webhookConfig = {
+  enabled: false,
+  url: ''
+};
+
+export function updateWebhookConfig(enabled: boolean, url: string) {
+  webhookConfig.enabled = enabled;
+  webhookConfig.url = url;
+}
+
 export function startApiGateway(apiKey: string, onLog: (log: any) => void): ApiGatewayState {
   if (server) {
     return { isRunning: true, port: PORT, apiKey: currentApiKey };

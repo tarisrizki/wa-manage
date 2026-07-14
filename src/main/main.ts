@@ -4,7 +4,7 @@ import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteW
 import { reloadRulesCache } from './wa-rule-engine';
 import { initDatabase, getDatabase, deleteMessage, clearAllMessages, getMessages, getAnalyticsData } from './database';
 import { startGmapsScraper, stopGmapsScraper } from './gmaps-scraper';
-import { startApiGateway, stopApiGateway, getGatewayStatus } from './api-gateway';
+import { startApiGateway, stopApiGateway, getGatewayStatus, updateWebhookConfig } from './api-gateway';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -286,6 +286,11 @@ ipcMain.handle('api-gateway:stop', () => {
   });
 });
 
-ipcMain.handle('api-gateway:status', () => {
-  return getGatewayStatus();
-});
+  ipcMain.handle('api-gateway:status', () => {
+    return getGatewayStatus();
+  });
+  
+  ipcMain.handle('api-gateway:update-webhook', (_event, enabled: boolean, url: string) => {
+    updateWebhookConfig(enabled, url);
+    return { success: true };
+  });

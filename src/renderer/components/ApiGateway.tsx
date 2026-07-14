@@ -9,8 +9,23 @@ export function ApiGateway() {
   const [logs, setLogs] = useState<{ time: string; type: string; msg: string }[]>([]);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'php' | 'node' | 'python' | 'curl'>('php');
+  const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
 
   useEffect(() => {
+    // Load config from local storage
+    const savedApiKey = localStorage.getItem('apiGateway_apiKey');
+    if (savedApiKey) setApiKey(savedApiKey);
+    
+    const savedWebhookEnabled = localStorage.getItem('apiGateway_webhookEnabled') === 'true';
+    const savedWebhookUrl = localStorage.getItem('apiGateway_webhookUrl') || '';
+    
+    setWebhookEnabled(savedWebhookEnabled);
+    setWebhookUrl(savedWebhookUrl);
+    
+    // Sync initial webhook config to main process
+    // @ts-ignore
+    window.api.updateWebhook(savedWebhookEnabled, savedWebhookUrl);
     // Cek status saat pertama kali render
     // @ts-ignore
     window.api.getApiGatewayStatus().then((status: any) => {
@@ -35,6 +50,21 @@ export function ApiGateway() {
   const generateApiKey = () => {
     return 'wa_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
+  
+  const handleWebhookToggle = () => {
+    const newVal = !webhookEnabled;
+    setWebhookEnabled(newVal);
+    localStorage.setItem('apiGateway_webhookEnabled', String(newVal));
+    // @ts-ignore
+    window.api.updateWebhook(newVal, webhookUrl);
+  };
+  
+  const handleWebhookUrlChange = (url: string) => {
+    setWebhookUrl(url);
+    localStorage.setItem('apiGateway_webhookUrl', url);
+    // @ts-ignore
+    window.api.updateWebhook(webhookEnabled, url);
+  };
 
   const handleToggle = async () => {
     if (isRunning) {
@@ -46,6 +76,7 @@ export function ApiGateway() {
       if (!key) {
         key = generateApiKey();
         setApiKey(key);
+        localStorage.setItem('apiGateway_apiKey', key);
       }
       // @ts-ignore
       const status = await window.api.startApiGateway(key);
@@ -186,7 +217,9 @@ print(response.text)`;
                       alert("Matikan server terlebih dahulu untuk mengganti API Key.");
                       return;
                     }
-                    setApiKey(generateApiKey());
+                    const newKey = generateApiKey();
+                    setApiKey(newKey);
+                    localStorage.setItem('apiGateway_apiKey', newKey);
                   }}
                   className="ml-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
                   title="Regenerate API Key"
@@ -197,6 +230,41 @@ print(response.text)`;
             </div>
             <p className="text-xs text-amber-500 mt-2 font-medium flex items-center">
               * Sertakan key ini di HTTP Header `x-api-key` pada setiap request Anda.
+            </p>
+          </div>
+
+          {/* Card Webhook */}
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6 relative overflow-hidden">
+            <div className="absolute -left-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center">
+                Webhook <span className="ml-2 text-xs font-normal normal-case bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">2-Way API</span>
+              </h3>
+              <div className="flex items-center">
+                <span className={`text-xs font-semibold mr-3 ${webhookEnabled ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                  {webhookEnabled ? 'ON' : 'OFF'}
+                </span>
+                <button
+                  onClick={handleWebhookToggle}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${webhookEnabled ? 'bg-emerald-500' : 'bg-muted'}`}
+                >
+                  <span className={`absolute left-1 top-1 w-3 h-3 rounded-full bg-white transition-transform ${webhookEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="mb-2">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Webhook URL Tujuan (POST)</label>
+              <input 
+                type="text" 
+                value={webhookUrl} 
+                onChange={(e) => handleWebhookUrlChange(e.target.value)}
+                placeholder="https://sistem-anda.com/api/webhook"
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-wa-primary transition-colors"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              Jika aktif, setiap pesan yang masuk ke WhatsApp akan di-*forward* ke URL ini secara *real-time* dengan metode <strong className="text-foreground">POST JSON</strong>.
             </p>
           </div>
 

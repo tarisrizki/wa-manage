@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('api', {
   startApiGateway: (apiKey: string) => ipcRenderer.invoke('api-gateway:start', apiKey),
   stopApiGateway: () => ipcRenderer.invoke('api-gateway:stop'),
   getApiGatewayStatus: () => ipcRenderer.invoke('api-gateway:status'),
+  updateWebhook: (enabled: boolean, url: string) => ipcRenderer.invoke('api-gateway:update-webhook', enabled, url),
   onApiGatewayLog: (callback: (log: any) => void) => {
     const handler = (_event: any, data: any) => callback(data);
     ipcRenderer.on('api-gateway:log', handler);

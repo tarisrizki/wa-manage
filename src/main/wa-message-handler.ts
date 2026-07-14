@@ -4,6 +4,7 @@ import { processMessageRules } from './wa-rule-engine';
 import { WASocket } from '@whiskeysockets/baileys';
 import fs from 'fs';
 import path from 'path';
+import { webhookConfig } from './api-gateway';
 
 const UNHANDLED_MSG_TYPE = '[Tipe Pesan Tak Tertangani]';
 const MEDIA_MSG_TYPE = '[Media/Pesan Non-Teks]';
@@ -135,6 +136,28 @@ export async function handleIncomingMessage(
     // Kirim event ke React Frontend
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('wa-message', { accountId, isGroup, msg, textContent, senderName, groupName });
+    }
+
+    // [FITUR BARU] Eksekusi Webhook jika aktif
+    if (webhookConfig.enabled && webhookConfig.url && !msg.key.fromMe) {
+      // Jalankan secara asynchronous tanpa await agar tidak nge-block
+      fetch(webhookConfig.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId,
+          sender: remoteJid,
+          pushName: senderName,
+          isGroup,
+          groupName,
+          message: textContent,
+          timestamp: new Date().toISOString()
+        })
+      }).then(res => {
+        if (!res.ok) console.warn(`[${accountId}] Webhook gagal dengan status: ${res.status}`);
+      }).catch(err => {
+        console.error(`[${accountId}] Error saat memanggil webhook:`, err.message);
+      });
     }
 
     // Panggil Rule Engine
