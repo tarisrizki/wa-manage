@@ -63,8 +63,9 @@ export function ApiGateway() {
 
   const getSnippet = () => {
     const url = `http://localhost:${port}/api/send-message`;
+    // Gunakan 'TugasPoint' atau nama sesi yang relevan agar user tidak bingung
     const payload = `{
-  "accountId": "0812xxxxxx", 
+  "accountId": "TugasPoint", 
   "number": "08123456789", 
   "message": "Halo, ini pesan percobaan",
   "media": {
@@ -80,7 +81,7 @@ curl_setopt_array($curl, array(
   CURLOPT_URL => '${url}',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_CUSTOMREQUEST => 'POST',
-  CURLOPT_POSTFIELDS => '${payload.replace(/\n/g, '')}',
+  CURLOPT_POSTFIELDS => '${payload.replace(/\n/g, ' ')}',
   CURLOPT_HTTPHEADER => array(
     'x-api-key: ${apiKey || 'YOUR_API_KEY'}',
     'Content-Type: application/json'
@@ -108,10 +109,10 @@ axios.post('${url}', data, {
     
     if (activeTab === 'python') {
       return `import requests
-import json
 
 url = "${url}"
-payload = json.dumps(${payload})
+# Gunakan multiline string untuk raw JSON
+payload = """${payload}"""
 headers = {
   'x-api-key': '${apiKey || 'YOUR_API_KEY'}',
   'Content-Type': 'application/json'
@@ -121,10 +122,9 @@ response = requests.request("POST", url, headers=headers, data=payload)
 print(response.text)`;
     }
 
-    return `curl -X POST ${url} \\
--H "x-api-key: ${apiKey || 'YOUR_API_KEY'}" \\
--H "Content-Type: application/json" \\
--d '${payload}'`;
+    // Windows CMD/PowerShell compatible curl
+    const oneLinePayload = payload.replace(/\n/g, '').replace(/"/g, '\\"');
+    return `curl -X POST ${url} -H "x-api-key: ${apiKey || 'YOUR_API_KEY'}" -H "Content-Type: application/json" -d "${oneLinePayload}"`;
   };
 
   return (
