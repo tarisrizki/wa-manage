@@ -277,8 +277,20 @@ export function cleanupWhatsAppManager() {
   }
 }
 
+export interface MediaOptions {
+  type: 'image' | 'document' | 'video' | 'audio';
+  mimetype?: string;
+  fileName?: string;
+}
+
 // [FITUR BARU] Endpoint untuk mengirim pesan dari UI (Balasan atau Broadcast)
-export async function sendMessage(accountId: string, jid: string, text: string, imageBuffer?: Buffer | Uint8Array | ArrayBuffer): Promise<boolean> {
+export async function sendMessage(
+  accountId: string, 
+  jid: string, 
+  text: string, 
+  mediaBuffer?: Buffer | Uint8Array | ArrayBuffer,
+  mediaOptions?: MediaOptions
+): Promise<boolean> {
   try {
     const sock = activeSockets[accountId];
     if (!sock) {
@@ -291,16 +303,34 @@ export async function sendMessage(accountId: string, jid: string, text: string, 
       jid = `${jid}@s.whatsapp.net`;
     }
 
-    console.log(`[${accountId}] SendMessage called. JID: ${jid}, hasImage: ${!!imageBuffer}`);
+    console.log(`[${accountId}] SendMessage called. JID: ${jid}, hasMedia: ${!!mediaBuffer}`);
 
-    if (imageBuffer) {
-      console.log(`[${accountId}] Image buffer received, sending media...`);
+    if (mediaBuffer) {
+      console.log(`[${accountId}] Media buffer received, sending media...`);
       // Convert ArrayBuffer to Node Buffer if necessary
-      const buffer = Buffer.isBuffer(imageBuffer) ? imageBuffer : Buffer.from(imageBuffer as any);
-      await sock.sendMessage(jid, { image: buffer, caption: text });
-      console.log(`[${accountId}] Image sent successfully.`);
+      const buffer = Buffer.isBuffer(mediaBuffer) ? mediaBuffer : Buffer.from(mediaBuffer as any);
+      
+      const type = mediaOptions?.type || 'image';
+      const mimetype = mediaOptions?.mimetype;
+      const fileName = mediaOptions?.fileName;
+
+      if (type === 'image') {
+        await sock.sendMessage(jid, { image: buffer, caption: text, mimetype: mimetype || 'image/jpeg' });
+      } else if (type === 'document') {
+        await sock.sendMessage(jid, { document: buffer, caption: text, mimetype: mimetype || 'application/octet-stream', fileName: fileName || 'document.file' });
+      } else if (type === 'video') {
+        await sock.sendMessage(jid, { video: buffer, caption: text, mimetype: mimetype || 'video/mp4' });
+      } else if (type === 'audio') {
+        await sock.sendMessage(jid, { audio: buffer, mimetype: mimetype || 'audio/mp4' }); // Audio biasanya tidak pakai caption
+        if (text) {
+          // Jika ada teks tapi tipenya audio, kirim teksnya terpisah
+          await sock.sendMessage(jid, { text });
+        }
+      }
+      
+      console.log(`[${accountId}] Media (${type}) sent successfully.`);
     } else {
-      // Jika tidak ada gambar, kirim sebagai pesan teks biasa
+      // Jika tidak ada gambar/media, kirim sebagai pesan teks biasa
       await sock.sendMessage(jid, { text });
     }
     

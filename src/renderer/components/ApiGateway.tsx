@@ -66,7 +66,11 @@ export function ApiGateway() {
     const payload = `{
   "accountId": "0812xxxxxx", 
   "number": "08123456789", 
-  "message": "Halo, ini pesan percobaan"
+  "message": "Halo, ini pesan percobaan",
+  "media": {
+    "url": "https://example.com/image.png",
+    "type": "image"
+  }
 }`;
 
     if (activeTab === 'php') {
