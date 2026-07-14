@@ -4,6 +4,7 @@ import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteW
 import { reloadRulesCache } from './wa-rule-engine';
 import { initDatabase, getDatabase, deleteMessage, clearAllMessages, getMessages, getAnalyticsData } from './database';
 import { startGmapsScraper, stopGmapsScraper } from './gmaps-scraper';
+import { startApiGateway, stopApiGateway, getGatewayStatus } from './api-gateway';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -266,4 +267,25 @@ ipcMain.handle('get-group-invite-info', async (event, accountId: string, code: s
 // [FITUR BARU] Endpoint untuk Group Scraper
 ipcMain.handle('scrape-group', async (event, accountId: string, groupJid: string) => {
   return await scrapeGroupParticipants(accountId, groupJid);
+});
+
+// [FITUR BARU] API Gateway Handlers
+ipcMain.handle('api-gateway:start', (event, apiKey: string) => {
+  return startApiGateway(apiKey, (log) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('api-gateway:log', log);
+    }
+  });
+});
+
+ipcMain.handle('api-gateway:stop', () => {
+  return stopApiGateway((log) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('api-gateway:log', log);
+    }
+  });
+});
+
+ipcMain.handle('api-gateway:status', () => {
+  return getGatewayStatus();
 });

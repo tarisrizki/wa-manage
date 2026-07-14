@@ -28,6 +28,16 @@ contextBridge.exposeInMainWorld('api', {
   // Analytics
   getAnalytics: () => ipcRenderer.invoke('get-analytics'),
   
+  // API Gateway
+  startApiGateway: (apiKey: string) => ipcRenderer.invoke('api-gateway:start', apiKey),
+  stopApiGateway: () => ipcRenderer.invoke('api-gateway:stop'),
+  getApiGatewayStatus: () => ipcRenderer.invoke('api-gateway:status'),
+  onApiGatewayLog: (callback: (log: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data);
+    ipcRenderer.on('api-gateway:log', handler);
+    return () => ipcRenderer.removeListener('api-gateway:log', handler);
+  },
+  
   // Gmaps Scraper
   startGmapsScraper: (accountId: string, query: string, locationFilter: string = '') => ipcRenderer.send('start-gmaps-scraper', accountId, query, locationFilter),
   stopGmapsScraper: () => ipcRenderer.send('stop-gmaps-scraper'),

@@ -16,6 +16,7 @@ import { JoinGroupCSVModal } from './components/JoinGroupCSVModal';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { GroupScraperModal } from './components/GroupScraperModal';
 import { GmapsScraperModal } from './components/GmapsScraperModal';
+import { ApiGateway } from './components/ApiGateway';
 
 export default function App() {
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
@@ -99,7 +100,9 @@ export default function App() {
 
         {/* MAIN AREA */}
         <div className="flex-1 flex flex-col min-w-0 bg-background relative z-10">
-          {activeAccount === 'ANALYTICS' ? (
+          {activeAccount === 'API_GATEWAY' ? (
+            <ApiGateway />
+          ) : activeAccount === 'ANALYTICS' ? (
             <AnalyticsDashboard />
           ) : activeAccount ? (
             <div className="flex flex-col h-full w-full overflow-hidden">

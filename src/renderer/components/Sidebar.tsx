@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Monitor, Trash2, Plus, Moon, Sun, Layers, BarChart3 } from 'lucide-react';
+import { Monitor, Trash2, Plus, Moon, Sun, Layers, BarChart3, PlugZap } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -86,6 +86,19 @@ export function Sidebar({ savedAccounts, connectedAccounts, qrs, activeAccount, 
           title="Dashboard Analytics"
         >
           <BarChart3 size={22} />
+        </button>
+
+        {/* APIGATEWAY option */}
+        <button
+          onClick={() => setActiveAccount('API_GATEWAY')}
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border relative group ${
+            activeAccount === 'API_GATEWAY' 
+              ? 'bg-primary/10 border-primary/30 text-primary shadow-sm ring-1 ring-primary/20' 
+              : 'border-transparent bg-muted/30 hover:bg-muted/80 hover:border-border/50 text-muted-foreground hover:text-foreground'
+          }`}
+          title="Integrasi API"
+        >
+          <PlugZap size={22} />
         </button>
 
         {/* ALL ACCOUNTS option */}
