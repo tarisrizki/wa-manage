@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Smartphone, GripVertical, Megaphone, MonitorSmartphone, Users } from 'lucide-react';
-import { Group, Panel, Separator } from 'react-resizable-panels';
+import { Megaphone, MonitorSmartphone, Users, Download, MapPin } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import { Group, Panel, Separator } from 'react-resizable-panels';
 
 import { useWhatsAppAccounts } from './hooks/useWhatsAppAccounts';
 import { useWhatsAppMessages } from './hooks/useWhatsAppMessages';
@@ -13,10 +13,15 @@ import { QRScreen } from './components/QRScreen';
 import { RuleEngine } from './components/RuleEngine';
 import { BroadcastModal } from './components/BroadcastModal';
 import { JoinGroupCSVModal } from './components/JoinGroupCSVModal';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { GroupScraperModal } from './components/GroupScraperModal';
+import { GmapsScraperModal } from './components/GmapsScraperModal';
 
 export default function App() {
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
   const [isJoinGroupModalOpen, setIsJoinGroupModalOpen] = useState(false);
+  const [isScraperModalOpen, setIsScraperModalOpen] = useState(false);
+  const [isGmapsModalOpen, setIsGmapsModalOpen] = useState(false);
 
   const {
     savedAccounts,
@@ -38,7 +43,9 @@ export default function App() {
     handleDeleteMessage,
     handleClearMessages,
     handleLoadMoreMessages,
-    isLoadingMessages
+    isLoadingMessages,
+    selectedGroupJid,
+    setSelectedGroupJid
   } = useWhatsAppMessages(activeAccount);
 
   // Tab 'ALL' dianggap selalu terkoneksi asalkan ada minimal 1 akun yang terkoneksi
@@ -47,151 +54,168 @@ export default function App() {
     : (activeAccount && connectedAccounts.includes(activeAccount));
 
   return (
-    <div className="flex flex-col h-screen w-full font-sans text-wa-textDark bg-wa-bg selection:bg-wa-green selection:text-white overflow-hidden">
+    <div className="flex flex-col h-screen w-full font-sans text-foreground bg-background selection:bg-primary selection:text-primary-foreground overflow-hidden">
       
 
       <AnimatePresence>
-        {isBroadcastModalOpen && activeAccount && (
+        {isBroadcastModalOpen && activeAccount && activeAccount !== 'ANALYTICS' && (
           <BroadcastModal 
             activeAccount={activeAccount} 
             onClose={() => setIsBroadcastModalOpen(false)} 
           />
         )}
-        {isJoinGroupModalOpen && activeAccount && (
+        {isJoinGroupModalOpen && activeAccount && activeAccount !== 'ANALYTICS' && (
           <JoinGroupCSVModal
             activeAccount={activeAccount}
             onClose={() => setIsJoinGroupModalOpen(false)}
           />
         )}
+        {isScraperModalOpen && activeAccount && activeAccount !== 'ANALYTICS' && (
+          <GroupScraperModal
+            activeAccount={activeAccount}
+            onClose={() => setIsScraperModalOpen(false)}
+          />
+        )}
+        {isGmapsModalOpen && activeAccount !== 'ANALYTICS' && (
+          <GmapsScraperModal onClose={() => setIsGmapsModalOpen(false)} activeAccount={activeAccount!} />
+        )}
       </AnimatePresence>
 
-      {activeAccount && (
-        <div className="flex flex-col z-10 shrink-0">
-          {/* Header Utama (membentang penuh) */}
-          <div className="h-[60px] bg-wa-panel flex items-center px-4 py-2 border-b border-wa-border">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center mr-4">
-              <Smartphone className="text-slate-300" size={20} />
-            </div>
-            <div className="flex-1 flex flex-col min-w-0">
-              <span className="text-white text-base font-medium truncate">{activeAccount}</span>
-              <span className="text-xs text-wa-textMuted truncate">
-                {isActiveAccountConnected ? 'Online' : 'Membutuhkan tindakan'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4 text-[#aebac1] shrink-0">
-              <button 
-                onClick={() => setIsJoinGroupModalOpen(true)}
-                className="p-2 rounded-full hover:bg-wa-hover text-wa-primary transition-colors flex items-center"
-                title="Join Grup dari CSV"
-              >
-                <Users size={20} className="mr-2" />
-                <span className="text-sm font-medium">Join Grup</span>
-              </button>
-              <button 
-                onClick={() => setIsBroadcastModalOpen(true)}
-                className="p-2 rounded-full hover:bg-wa-hover text-wa-primary transition-colors flex items-center"
-                title="Kirim Broadcast"
-              >
-                <Megaphone size={20} className="mr-2" />
-                <span className="text-sm font-medium">Broadcast</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Kontainer Utama dengan 1 Group untuk 3 Panel */}
+      {/* Kontainer Utama */}
       <div className="flex-1 w-full relative z-10 flex min-h-0 overflow-hidden">
-        <Group orientation="horizontal" className="w-full h-full">
-          {/* PANEL 1: DAFTAR AKUN (Sidebar) */}
-          <Panel id="panel-sidebar" defaultSize={25} minSize={15}>
-            <div className="h-full bg-wa-bg border-r border-[#313d45]/30">
-              <Sidebar 
-                savedAccounts={savedAccounts}
-                connectedAccounts={connectedAccounts}
-                qrs={qrs}
-                activeAccount={activeAccount}
-                setActiveAccount={setActiveAccount}
-                onAddAccount={handleAddAccount}
-                onDeleteAccount={handleDeleteAccount}
-              />
-            </div>
-          </Panel>
+        
+        {/* SIDEBAR FIXED (ICON ONLY) */}
+        <div className="w-[72px] shrink-0 h-full z-20 relative shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+          <Sidebar 
+            savedAccounts={savedAccounts}
+            connectedAccounts={connectedAccounts}
+            qrs={qrs}
+            activeAccount={activeAccount}
+            setActiveAccount={setActiveAccount}
+            onAddAccount={handleAddAccount}
+            onDeleteAccount={handleDeleteAccount}
+          />
+        </div>
 
-          <Separator id="sep-sidebar" className="group flex items-center justify-center w-2 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] cursor-col-resize z-30">
-            <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full">
-              <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
-            </div>
-          </Separator>
+        {/* MAIN AREA */}
+        <div className="flex-1 flex flex-col min-w-0 bg-background relative z-10">
+          {activeAccount === 'ANALYTICS' ? (
+            <AnalyticsDashboard />
+          ) : activeAccount ? (
+            <div className="flex flex-col h-full w-full overflow-hidden">
+              {/* Header Utama (Area Kanan) */}
+              <div className="h-[60px] bg-background flex items-center px-6 py-2 border-b border-border/50 shrink-0 shadow-sm z-20">
+                <div className="flex-1 flex items-center min-w-0">
+                  <span className="text-foreground text-lg font-semibold tracking-tight truncate mr-3">{activeAccount}</span>
+                  <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium flex items-center ${isActiveAccountConnected ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isActiveAccountConnected ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                    {isActiveAccountConnected ? 'Online' : 'Menghubungkan...'}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2 text-muted-foreground shrink-0">
+                  <button 
+                    onClick={() => setIsGmapsModalOpen(true)}
+                    className="px-3 py-1.5 rounded-md hover:bg-primary/20 text-primary hover:text-primary transition-all flex items-center text-sm font-medium"
+                    title="Cari Leads (B2B) dari Google Maps"
+                  >
+                    <MapPin size={16} className="mr-2" />
+                    Cari Leads
+                  </button>
+                  <button 
+                    onClick={() => setIsScraperModalOpen(true)}
+                    className="px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all flex items-center text-sm font-medium"
+                    title="Ekstrak Peserta Grup ke CSV"
+                  >
+                    <Download size={16} className="mr-2" />
+                    Ekstrak Grup
+                  </button>
+                  <button 
+                    onClick={() => setIsJoinGroupModalOpen(true)}
+                    className="px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all flex items-center text-sm font-medium"
+                    title="Join Grup dari CSV"
+                  >
+                    <Users size={16} className="mr-2" />
+                    Join Grup
+                  </button>
+                  <button 
+                    onClick={() => setIsBroadcastModalOpen(true)}
+                    className="px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all flex items-center text-sm font-medium"
+                    title="Kirim Broadcast"
+                  >
+                    <Megaphone size={16} className="mr-2" />
+                    Broadcast
+                  </button>
+                </div>
+              </div>
 
-          {/* Sisa Area: Chat atau QR */}
-          {activeAccount ? (
-            <>
-              {!isActiveAccountConnected ? (
-                <Panel id="panel-qr" defaultSize={75} minSize={40}>
-                  <div className="h-full w-full bg-wa-chatBg flex items-center justify-center">
+              {/* Konten Chat / QR */}
+              <div className="flex-1 flex flex-col min-h-0 relative">
+                {!isActiveAccountConnected ? (
+                  <div className="h-full w-full bg-muted/20 flex items-center justify-center">
                     <QRScreen qr={qrs[activeAccount]} />
                   </div>
-                </Panel>
-              ) : (
-                <>
-                  {/* PANEL 2: OBROLAN GRUP */}
-                  <Panel id="panel-group" defaultSize={37.5} minSize={20}>
-                    <div className="h-full flex flex-col bg-wa-chatBg overflow-hidden">
-                      <RuleEngine 
-                        rules={rules} 
-                        isFilterEnabled={isFilterEnabled}
-                        setIsFilterEnabled={setIsFilterEnabled}
-                        onAddRule={handleAddRule} 
-                        onDeleteRule={handleDeleteRule} 
-                      />
-                      <ChatRoom 
-                        title="🏢 Obrolan Grup"
-                        messages={filteredMessages.filter(m => m.isGroup)} 
-                        activeAccount={activeAccount}
-                        rules={rules}
-                        onDeleteMessage={handleDeleteMessage}
-                        onClearMessages={() => handleClearMessages(true)}
-                        onLoadMore={handleLoadMoreMessages}
-                        isLoading={isLoadingMessages}
-                      />
-                    </div>
-                  </Panel>
+                ) : (
+                  <Group orientation="horizontal" className="w-full h-full relative">
+                    {/* Panel Kiri: Grup */}
+                    <Panel defaultSize={50} minSize={20}>
+                      <div className="h-full flex flex-col bg-background overflow-hidden relative">
+                        <ChatRoom 
+                          title="Obrolan Grup"
+                          activeAccount={activeAccount} 
+                          messages={filteredMessages.filter(m => m.isGroup)} 
+                          rules={rules}
+                          onDeleteMessage={handleDeleteMessage}
+                          onClearMessages={() => handleClearMessages(true)}
+                          onLoadMore={() => handleLoadMoreMessages()}
+                          isLoading={isLoadingMessages}
+                          filterComponent={
+                            <RuleEngine 
+                              rules={rules} 
+                              onAddRule={handleAddRule} 
+                              onDeleteRule={handleDeleteRule}
+                              isFilterEnabled={isFilterEnabled}
+                              setIsFilterEnabled={setIsFilterEnabled}
+                              activeAccount={activeAccount!}
+                              selectedGroupJid={selectedGroupJid}
+                              setSelectedGroupJid={setSelectedGroupJid}
+                            />
+                          }
+                        />
+                      </div>
+                    </Panel>
 
-                  <Separator id="sep-main" className="group flex items-center justify-center w-2 bg-[#202c33] hover:bg-[#2a3942] active:bg-[#00a884] cursor-col-resize z-30">
-                    <div className="flex items-center justify-center h-12 w-1.5 bg-[#313d45] group-hover:bg-[#8696a0] rounded-full">
-                      <GripVertical size={12} className="text-[#8696a0] group-hover:text-white" />
-                    </div>
-                  </Separator>
+                    {/* Pembatas Fleksibel (Resize Handle) */}
+                    <Separator className="w-1 bg-border/50 hover:bg-primary/50 transition-colors cursor-col-resize z-30 flex items-center justify-center" />
 
-                  {/* PANEL 3: PESAN PRIBADI */}
-                  <Panel id="panel-private" defaultSize={37.5} minSize={20}>
-                    <div className="h-full flex flex-col bg-wa-chatBg border-l border-[#313d45]/30 overflow-hidden">
-                      <ChatRoom 
-                        title="👤 Pesan Pribadi"
-                        messages={filteredMessages.filter(m => !m.isGroup)} 
-                        activeAccount={activeAccount}
-                        rules={rules}
-                        onDeleteMessage={handleDeleteMessage}
-                        onClearMessages={() => handleClearMessages(false)}
-                        onLoadMore={handleLoadMoreMessages}
-                        isLoading={isLoadingMessages}
-                      />
-                    </div>
-                  </Panel>
-                </>
-              )}
-            </>
-          ) : (
-            <Panel id="panel-empty" defaultSize={75} minSize={40}>
-              <div className="h-full w-full bg-wa-chatBg flex flex-col items-center justify-center text-[#8696a0]">
-                <MonitorSmartphone size={80} className="mb-6 text-[#41525d] font-light" />
-                <h1 className="text-3xl font-light text-[#e9edef] mb-4">WhatsApp Web Manager</h1>
-                <p className="text-sm">Pilih akun dari daftar di sebelah kiri untuk mulai mengelola.</p>
+                    {/* Panel Kanan: Pribadi */}
+                    <Panel defaultSize={50} minSize={20}>
+                      <div className="h-full flex flex-col bg-background overflow-hidden relative">
+                        <ChatRoom 
+                          title="Pesan Personal"
+                          activeAccount={activeAccount} 
+                          messages={filteredMessages.filter(m => !m.isGroup)} 
+                          rules={rules}
+                          onDeleteMessage={handleDeleteMessage}
+                          onClearMessages={() => handleClearMessages(false)}
+                          onLoadMore={() => handleLoadMoreMessages()}
+                          isLoading={isLoadingMessages}
+                        />
+                      </div>
+                    </Panel>
+                  </Group>
+                )}
               </div>
-            </Panel>
+            </div>
+          ) : (
+            <div className="h-full w-full bg-background flex flex-col items-center justify-center text-muted-foreground p-8">
+              <div className="w-24 h-24 mb-6 rounded-full bg-muted flex items-center justify-center border border-border">
+                <MonitorSmartphone size={40} className="text-muted-foreground/60" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Pilih Akun WhatsApp</h2>
+              <p className="max-w-md text-center mb-8">Klik pada salah satu akun di sidebar kiri untuk mengelola pesan dan pengaturan, atau tambah akun baru.</p>
+            </div>
           )}
-        </Group>
+        </div>
       </div>
     </div>
   );

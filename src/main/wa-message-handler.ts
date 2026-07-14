@@ -38,6 +38,24 @@ export async function handleIncomingMessage(
         senderName = 'Unknown';
       }
     }
+
+    // [FITUR BARU] Simpan pushName pengirim ke database contacts
+    if (msg.pushName) {
+      const db = getDatabase();
+      const contactId = isGroup && participantJid ? participantJid : remoteJid;
+      try {
+        const stmtCheck = db.prepare('SELECT id FROM contacts WHERE account_id = ? AND remote_jid = ?');
+        const exists = stmtCheck.get(accountId, contactId);
+        if (exists) {
+          db.prepare('UPDATE contacts SET name = ? WHERE account_id = ? AND remote_jid = ?').run(msg.pushName, accountId, contactId);
+        } else {
+          db.prepare('INSERT INTO contacts (account_id, remote_jid, name) VALUES (?, ?, ?)').run(accountId, contactId, msg.pushName);
+        }
+      } catch (err) {
+        console.error(`[${accountId}] Gagal menyimpan kontak pesan:`, err);
+      }
+    }
+    
     let groupName = null;
     
     if (isGroup) {
@@ -100,10 +118,11 @@ export async function handleIncomingMessage(
       }
       
       if (!isDuplicate && textContent.trim() && textContent !== UNHANDLED_MSG_TYPE) {
+         const initialStatus = msg.key.fromMe ? 'SENT' : 'RECEIVED';
          db.prepare(`
-           INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id, from_me) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-         `).run(accountId, remoteJid, textContent, isGroup ? 1 : 0, senderName, groupName, msg.key?.id || null, msg.key.fromMe ? 1 : 0);
+           INSERT INTO messages (account_id, remote_jid, content, is_group, sender_name, group_name, msg_key_id, from_me, status) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         `).run(accountId, remoteJid, textContent, isGroup ? 1 : 0, senderName, groupName, msg.key?.id || null, msg.key.fromMe ? 1 : 0, initialStatus);
       }
     } catch (err) {
       console.error(`[${accountId}] Gagal menyimpan pesan ke DB`, err);

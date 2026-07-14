@@ -129,23 +129,35 @@ export function useWhatsAppMessages(activeAccount: string | null) {
     window.api.deleteMessage(msgKeyId);
   };
   
-  const handleClearMessages = (isGroup: boolean) => {
+  const handleClearMessages = (isGroup?: boolean) => {
     if (!activeAccount) return;
     
     setMessages(prev => {
       const accMsgs = prev[activeAccount] || [];
       return {
         ...prev,
-        [activeAccount]: accMsgs.filter(m => m.isGroup !== isGroup)
+        [activeAccount]: isGroup === undefined ? [] : accMsgs.filter(m => m.isGroup !== isGroup)
       };
     });
     
-    window.api.clearMessages(activeAccount, isGroup);
+    if (isGroup === undefined) {
+      window.api.clearMessages(activeAccount, false);
+      window.api.clearMessages(activeAccount, true);
+    } else {
+      window.api.clearMessages(activeAccount, isGroup);
+    }
   };
+
+  const [selectedGroupJid, setSelectedGroupJid] = useState<string | null>(null);
 
   const filteredMessages = activeAccount ? (messages[activeAccount] || []).filter(msg => {
     // Pesan pribadi (!msg.isGroup) selalu tampil semua tanpa difilter.
     if (!msg.isGroup) return true;
+    
+    // Filter by selected group if one is selected
+    if (selectedGroupJid && msg.msg?.key?.remoteJid !== selectedGroupJid) {
+      return false;
+    }
     
     // Jika toggle filter dimatikan atau tidak ada rule, tampilkan semua
     if (!isFilterEnabled || !rules || rules.length === 0) return true;
@@ -165,6 +177,8 @@ export function useWhatsAppMessages(activeAccount: string | null) {
     filteredMessages,
     isFilterEnabled,
     setIsFilterEnabled,
+    selectedGroupJid,
+    setSelectedGroupJid,
     handleAddRule,
     handleDeleteRule,
     handleDeleteMessage,

@@ -182,6 +182,39 @@ export async function connectToWhatsApp(accountId: string, mainWindow: BrowserWi
     handleIncomingMessage(sock, m, accountId, mainWindow, groupMetadataCache);
   });
 
+  // [ANALYTICS] Dengarkan perubahan status pesan (Sent, Delivered, Read)
+  sock.ev.on('messages.update', async (updates) => {
+    try {
+      const db = getDatabase();
+      for (const update of updates) {
+        if (update.key && update.update.status) {
+          const statusMap = {
+            1: 'pending',
+            2: 'server_ack', // Sent
+            3: 'delivery_ack', // Delivered
+            4: 'read', // Read
+            5: 'played'
+          };
+          const strStatus = statusMap[update.update.status as keyof typeof statusMap] || 'unknown';
+          
+          if (update.key.id) {
+            db.prepare(`UPDATE messages SET status = ? WHERE key_id = ?`).run(strStatus, update.key.id);
+          }
+
+          // Beritahu frontend untuk live-update (Broadcasting ke semua renderer/dashboard)
+          if (mainWindow && !mainWindow.isDestroyed()) {
+             mainWindow.webContents.send('message-status-update', {
+               keyId: update.key.id,
+               status: strStatus
+             });
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`[${accountId}] Gagal mengupdate status pesan:`, err);
+    }
+  });
+
   activeSockets[accountId] = sock;
 }
 
@@ -352,5 +385,75 @@ export async function joinGroupByCode(accountId: string, inviteCode: string): Pr
   } catch (err: any) {
     console.error(`[${accountId}] Gagal join grup via kode ${inviteCode}:`, err);
     return { success: false, reason: err?.message || 'unknown_error' };
+  }
+}
+
+// [FITUR BARU] Cek apakah sebuah nomor terdaftar di WhatsApp
+export async function checkNumberOnWhatsApp(accountId: string, phone: string): Promise<boolean> {
+  try {
+    const sock = activeSockets[accountId];
+    if (!sock) return false;
+    
+    // Pastikan format nomor benar (tanpa + atau karakter khusus)
+    const jid = `${phone.replace(/\D/g, '')}@s.whatsapp.net`;
+    const results = await sock.onWhatsApp(jid);
+    const result = results?.[0];
+    
+    return result?.exists || false;
+  } catch (err) {
+    console.error(`[${accountId}] Gagal cek nomor ${phone}:`, err);
+    return false;
+  }
+}
+
+// [FITUR BARU] Endpoint untuk mengecek info/metadata grup tanpa bergabung (Preview Mode)
+export async function getGroupInviteInfo(accountId: string, inviteCode: string): Promise<any> {
+  try {
+    const sock = activeSockets[accountId];
+    if (!sock) {
+      return { success: false, reason: 'socket_not_active' };
+    }
+
+    const groupInfo = await sock.groupGetInviteInfo(inviteCode);
+    if (!groupInfo) {
+      return { success: false, reason: 'invalid_link' };
+    }
+
+    return {
+      success: true,
+      id: groupInfo.id,
+      subject: groupInfo.subject,
+      size: groupInfo.size || 0,
+      joinApprovalMode: !!groupInfo.joinApprovalMode,
+      isCommunity: !!groupInfo.isCommunity,
+      isCommunityAnnounce: !!groupInfo.isCommunityAnnounce
+    };
+  } catch (err: any) {
+    // Tangkap error jika link mati atau diblokir
+    return { success: false, isExpired: true, reason: err?.message || 'unknown_error' };
+  }
+}
+
+// [FITUR BARU] Scraper anggota grup WhatsApp
+export async function scrapeGroupParticipants(accountId: string, groupJid: string): Promise<{ success: boolean, data?: any[], error?: string }> {
+  try {
+    const sock = activeSockets[accountId];
+    if (!sock) return { success: false, error: 'Socket tidak aktif' };
+
+    const metadata = await sock.groupMetadata(groupJid);
+    if (!metadata || !metadata.participants) {
+      return { success: false, error: 'Gagal mengambil data grup atau grup kosong.' };
+    }
+
+    const members = metadata.participants.map(p => ({
+      id: p.id,
+      admin: p.admin, // null, 'admin', 'superadmin'
+      number: p.id.split('@')[0]
+    }));
+
+    return { success: true, data: members };
+  } catch (err: any) {
+    console.error(`[${accountId}] Gagal scrape grup ${groupJid}:`, err);
+    return { success: false, error: err.message || 'Terjadi kesalahan tidak diketahui.' };
   }
 }

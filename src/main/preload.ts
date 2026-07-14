@@ -22,12 +22,43 @@ contextBridge.exposeInMainWorld('api', {
   getGroups: (accountId: string) => ipcRenderer.invoke('get-groups', accountId),
   simulateTyping: (accountId: string, jid: string, durationMs: number) => ipcRenderer.invoke('simulate-typing', accountId, jid, durationMs),
   joinGroupByCode: (accountId: string, code: string) => ipcRenderer.invoke('join-group-by-code', accountId, code),
+  getGroupInviteInfo: (accountId: string, code: string) => ipcRenderer.invoke('get-group-invite-info', accountId, code),
+  scrapeGroup: (accountId: string, groupJid: string) => ipcRenderer.invoke('scrape-group', accountId, groupJid),
+  
+  // Analytics
+  getAnalytics: () => ipcRenderer.invoke('get-analytics'),
+  
+  // Gmaps Scraper
+  startGmapsScraper: (accountId: string, query: string, locationFilter: string = '') => ipcRenderer.send('start-gmaps-scraper', accountId, query, locationFilter),
+  stopGmapsScraper: () => ipcRenderer.send('stop-gmaps-scraper'),
+  
+  onGmapsScraperResult: (callback: (data: { name: string, phone: string }) => void) => {
+    const handler = (_event: any, data: any) => callback(data);
+    ipcRenderer.on('gmaps-scraper-result', handler);
+    return () => ipcRenderer.removeListener('gmaps-scraper-result', handler);
+  },
+  onGmapsScraperStatus: (callback: (status: string) => void) => {
+    const handler = (_event: any, data: string) => callback(data);
+    ipcRenderer.on('gmaps-scraper-status', handler);
+    return () => ipcRenderer.removeListener('gmaps-scraper-status', handler);
+  },
+  onGmapsScraperEnd: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('gmaps-scraper-end', handler);
+    return () => ipcRenderer.removeListener('gmaps-scraper-end', handler);
+  },
   
   // Listener untuk pesan WhatsApp yang masuk
   onWhatsAppMessage: (callback: (data: any) => void) => {
     const handler = (_event: any, data: any) => callback(data);
     ipcRenderer.on('wa-message', handler);
     return () => ipcRenderer.removeListener('wa-message', handler);
+  },
+  
+  onWhatsAppMessageStatusUpdate: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('wa-message-status-update', handler);
+    return () => ipcRenderer.removeListener('wa-message-status-update', handler);
   },
   
   // Listener untuk QR Code login

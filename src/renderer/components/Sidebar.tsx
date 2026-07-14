@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Monitor, Trash2, Smartphone, Plus, Inbox } from 'lucide-react';
+import { Monitor, Trash2, Plus, Moon, Sun, Layers, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from './ui/ToastProvider';
+import { useTheme } from './ThemeProvider';
 
 export interface SidebarProps {
   savedAccounts: string[];
@@ -19,6 +20,7 @@ export function Sidebar({ savedAccounts, connectedAccounts, qrs, activeAccount, 
   const [newAccountId, setNewAccountId] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { showConfirm } = useToast();
+  const { theme, setTheme } = useTheme();
 
   const handleAddAccount = () => {
     if (newAccountId && newAccountId.trim()) {
@@ -31,143 +33,134 @@ export function Sidebar({ savedAccounts, connectedAccounts, qrs, activeAccount, 
   };
 
   return (
-    <div className="w-full h-full flex flex-col border-r border-wa-border bg-wa-bg overflow-hidden">
-      {/* Header Kiri */}
-      <div className="h-[60px] bg-wa-panel flex items-center justify-between px-4 py-2 shrink-0">
-        <div className="w-10 h-10 rounded-full bg-[#6a7175] flex items-center justify-center">
-          <Monitor className="text-wa-textDark" size={24} />
+    <div className="w-full h-full flex flex-col items-center bg-background overflow-hidden py-3">
+      {/* Header (Branding & Add) */}
+      <div className="w-full flex flex-col items-center px-2 space-y-4 shrink-0 mb-4">
+        {/* Branding */}
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 ring-1 ring-primary/10" title="WA Manager">
+          <Monitor className="text-primary" size={20} strokeWidth={2.5} />
         </div>
-        <div className="flex items-center space-x-4 text-[#aebac1]">
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger render={<Button variant="ghost" size="icon" className="p-2 w-auto h-auto rounded-full hover:bg-wa-hover transition-colors" title="Tambah Akun" />}>
+        
+        <div className="w-8 h-[1px] bg-border/60"></div>
+
+        {/* Add Account */}
+        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+          <DialogTrigger>
+            <button className="w-10 h-10 rounded-full flex items-center justify-center bg-muted/50 hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-colors border border-border/50" title="Tambah Akun">
               <Plus size={20} />
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-wa-panel text-wa-textDark border-wa-border">
-              <DialogHeader>
-                <DialogTitle className="text-white">Tambah Akun WhatsApp</DialogTitle>
-                <DialogDescription className="text-wa-textMuted">
-                  Masukkan ID Unik untuk sesi ini. Disarankan nama divisi (Contoh: CS-1).
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex items-center space-x-2 py-4">
-                <Input 
-                  value={newAccountId}
-                  onChange={(e) => setNewAccountId(e.target.value)}
-                  placeholder="Ketik ID Akun..." 
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddAccount()}
-                  className="bg-wa-hover border-none text-white focus-visible:ring-1 focus-visible:ring-wa-green"
-                />
-              </div>
-              <DialogFooter>
-                <Button onClick={handleAddAccount} className="bg-wa-primary hover:bg-wa-primary/90 text-white">Tambahkan</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          {/* <button className="p-2 rounded-full hover:bg-wa-hover transition-colors">
-            <MoreVertical size={20} />
-          </button> */}
-        </div>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md bg-card text-foreground border-border">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Tambah Akun WhatsApp</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Masukkan ID Unik untuk sesi ini. Disarankan nama divisi (Contoh: CS-1).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center space-x-2 py-4">
+              <Input 
+                value={newAccountId}
+                onChange={(e) => setNewAccountId(e.target.value)}
+                placeholder="Ketik ID Akun..." 
+                onKeyDown={(e) => e.key === 'Enter' && handleAddAccount()}
+                className="bg-muted border-none text-foreground focus-visible:ring-1 focus-visible:ring-primary"
+              />
+            </div>
+            <DialogFooter>
+              <Button onClick={handleAddAccount} className="bg-primary hover:bg-primary/90 text-primary-foreground">Tambahkan</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Search Bar (Hidden until implemented) */}
-      {/* 
-      <div className="h-[50px] flex items-center px-3 py-2 border-b border-wa-border">
-        <div className="flex-1 flex items-center bg-wa-panel rounded-lg px-3 py-1.5 h-[35px]">
-          <Search size={18} className="text-wa-textMuted mr-4" />
-          <input 
-            type="text" 
-            placeholder="Cari akun..." 
-            className="bg-transparent border-none outline-none text-wa-textDark text-sm w-full placeholder:text-wa-textMuted"
-          />
-        </div>
-        <button className="ml-2 p-1.5 text-wa-textMuted">
-          <Filter size={18} />
+      {/* Account List */}
+      <div className="flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-none flex flex-col items-center space-y-3 px-2">
+        {/* ANALYTICS option */}
+        <button
+          onClick={() => setActiveAccount('ANALYTICS')}
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border relative group ${
+            activeAccount === 'ANALYTICS' 
+              ? 'bg-wa-primary/10 border-wa-primary/30 text-wa-primary shadow-sm ring-1 ring-wa-primary/20' 
+              : 'border-transparent bg-muted/30 hover:bg-muted/80 hover:border-border/50 text-muted-foreground hover:text-foreground'
+          }`}
+          title="Dashboard Analytics"
+        >
+          <BarChart3 size={22} />
         </button>
-      </div> 
-      */}
 
-      {/* Chat List (Daftar Akun) */}
-      <div className="flex-1 overflow-y-auto bg-wa-bg scrollbar-thin">
-        {/* Item "Semua Akun" */}
+        {/* ALL ACCOUNTS option */}
         {savedAccounts.length > 0 && (
-          <div 
+          <button
             onClick={() => setActiveAccount('ALL')}
-            className={`flex items-center px-3 h-[72px] cursor-pointer hover:bg-wa-panel transition-colors ${activeAccount === 'ALL' ? 'bg-wa-hover' : ''}`}
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border relative group ${
+              activeAccount === 'ALL' 
+                ? 'bg-primary/10 border-primary/30 text-primary shadow-sm ring-1 ring-primary/20' 
+                : 'border-transparent bg-muted/30 hover:bg-muted/80 hover:border-border/50 text-muted-foreground hover:text-foreground'
+            }`}
+            title="SEMUA AKUN (Gabungan Obrolan)"
           >
-            <div className="w-[50px] h-[50px] rounded-full bg-[#00a884] mr-3 flex-shrink-0 overflow-hidden flex items-center justify-center">
-              <Inbox className="text-white" size={24} />
-            </div>
-            <div className="flex-1 border-b border-wa-border h-full flex flex-col justify-center pr-2 min-w-0">
-              <div className="flex justify-between items-center mb-0.5">
-                <span className="text-white text-[17px] font-semibold truncate mr-2">Semua Akun</span>
-              </div>
-              <div className="flex items-center text-sm text-wa-textMuted">
-                <span className="truncate">Tampilkan pesan dari seluruh perangkat.</span>
-              </div>
-            </div>
-          </div>
+            <Layers size={22} />
+          </button>
         )}
 
+        {/* Individual Accounts */}
         {savedAccounts.map((accId) => {
           const isConnected = connectedAccounts.includes(accId);
           const hasQR = !!qrs[accId];
           const isActive = activeAccount === accId;
+          const statusText = isConnected ? 'Terhubung' : hasQR ? 'Butuh QR' : 'Menghubungkan...';
 
           return (
-            <div 
-              key={accId}
-              onClick={() => setActiveAccount(accId)}
-              className={`flex items-center px-3 h-[72px] cursor-pointer hover:bg-wa-panel transition-colors ${isActive ? 'bg-wa-hover' : ''}`}
-            >
-              <div className="w-[50px] h-[50px] rounded-full bg-slate-700 mr-3 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                <Smartphone className="text-slate-400" size={24} />
-              </div>
-              <div className="flex-1 border-b border-wa-border h-full flex flex-col justify-center pr-2 min-w-0">
-                <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-white text-[17px] font-medium truncate mr-2">{accId}</span>
-                  <div className="flex items-center space-x-2 shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="relative flex h-2.5 w-2.5">
-                        {isConnected && (
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-wa-teal opacity-75"></span>
-                        )}
-                        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                          isConnected ? 'bg-wa-teal' : hasQR ? 'bg-amber-500' : 'bg-gray-500'
-                        }`}></span>
-                      </span>
-                    </div>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showConfirm({
-                          title: 'Hapus Akun',
-                          message: 'Yakin ingin menghapus akun ini? Anda harus scan QR ulang jika ingin login kembali.',
-                          confirmText: 'Hapus',
-                          onConfirm: () => onDeleteAccount(e, accId)
-                        });
-                      }}
-                      className="p-2 hover:bg-[#374c58] rounded-full text-wa-textMuted hover:text-wa-danger transition-colors cursor-pointer relative z-50"
-                      title="Hapus Akun"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center text-sm text-wa-textMuted">
-                  <span className="truncate">
-                    {isConnected ? 'Akun terhubung dan siap memantau pesan.' : hasQR ? 'Klik untuk melihat kode QR login.' : 'Mencoba menghubungi server...'}
-                  </span>
-                </div>
-              </div>
+            <div key={accId} className="relative group w-12 h-12">
+              <button
+                onClick={() => setActiveAccount(accId)}
+                className={`w-full h-full rounded-2xl flex items-center justify-center transition-all border overflow-hidden ${
+                  isActive 
+                    ? 'bg-accent border-border/80 shadow-sm ring-1 ring-border' 
+                    : 'border-transparent bg-muted/30 hover:bg-muted/80 hover:border-border/50 text-muted-foreground hover:text-foreground'
+                }`}
+                title={`${accId} - ${statusText}`}
+              >
+                <span className="font-bold text-sm uppercase">
+                  {accId.substring(0, 2)}
+                </span>
+              </button>
+              
+              {/* Status Dot */}
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-[2.5px] border-background rounded-full ${
+                isConnected ? 'bg-emerald-500' : hasQR ? 'bg-amber-500' : 'bg-gray-400'
+              }`} title={statusText}></div>
+
+              {/* Delete Button (Hover) */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showConfirm({
+                    title: 'Hapus Akun',
+                    message: `Yakin ingin menghapus akun ${accId}?`,
+                    confirmText: 'Hapus',
+                    onConfirm: () => onDeleteAccount(e, accId)
+                  });
+                }}
+                className="absolute -top-1 -right-1 p-1 bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:scale-110"
+                title="Hapus Akun"
+              >
+                <Trash2 size={10} strokeWidth={3} />
+              </button>
             </div>
           );
         })}
-
-        {savedAccounts.length === 0 && (
-          <div className="text-center py-10 px-4 text-wa-textMuted text-sm mt-10">
-            Tidak ada obrolan/akun.<br/>Klik ikon '+' di atas untuk menambah akun.
-          </div>
-        )}
+      </div>
+      
+      {/* Footer / Theme Toggle */}
+      <div className="w-full flex flex-col items-center pt-4 pb-2 shrink-0 border-t border-border/30 mt-auto">
+        <button 
+          className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? "Mode Terang" : "Mode Gelap"}
+        >
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
       </div>
     </div>
   );

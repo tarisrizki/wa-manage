@@ -24,6 +24,7 @@ export function initDatabase() {
       group_name TEXT,
       msg_key_id TEXT,
       from_me BOOLEAN DEFAULT 0,
+      status TEXT DEFAULT 'RECEIVED',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -49,6 +50,12 @@ export function initDatabase() {
 
   try {
     db.exec("ALTER TABLE messages ADD COLUMN from_me BOOLEAN DEFAULT 0;");
+  } catch (e) {
+    // Abaikan jika kolom sudah ada
+  }
+
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN status TEXT DEFAULT 'RECEIVED';");
   } catch (e) {
     // Abaikan jika kolom sudah ada
   }
@@ -156,7 +163,6 @@ export function getMessages(accountId: string, offset: number = 0) {
       `).all(accountId, offset) as any[];
     }
     
-    // SQLite mengembalikan dari terbaru ke terlama karena DESC, kita balik urutannya
     return rows.reverse().map(row => ({
       accountId: row.account_id,
       isGroup: row.is_group === 1,
@@ -174,5 +180,71 @@ export function getMessages(accountId: string, offset: number = 0) {
   } catch (err) {
     console.error("Gagal memuat pesan riwayat:", err);
     return [];
+  }
+}
+
+export function getAnalyticsData() {
+  try {
+    const totalAccountsRow = db.prepare("SELECT COUNT(*) as count FROM accounts").get() as { count: number };
+    const totalRulesRow = db.prepare("SELECT COUNT(*) as count FROM notification_rules WHERE is_active = 1").get() as { count: number };
+    const totalMessagesRow = db.prepare("SELECT COUNT(*) as count FROM messages").get() as { count: number };
+    
+    // Ambil data pesan per hari untuk 7 hari terakhir
+    const chartRows = db.prepare(`
+      SELECT date(created_at) as date, COUNT(id) as count 
+      FROM messages 
+      WHERE created_at >= date('now', '-7 days')
+      GROUP BY date(created_at)
+      ORDER BY date(created_at) ASC
+    `).all() as { date: string, count: number }[];
+
+    // Format chart data agar mudah digunakan oleh Recharts
+    // Mengubah format "YYYY-MM-DD" menjadi singkatan hari misal "Mon", "Tue"
+    const chartData = chartRows.map(row => {
+      const d = new Date(row.date);
+      const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+      return {
+        name: days[d.getDay()],
+        fullDate: row.date,
+        messages: row.count
+      };
+    });
+
+    // Broadcast Analytics
+    const totalSentRow = db.prepare("SELECT COUNT(*) as count FROM messages WHERE from_me = 1 AND status IN ('SENT', 'DELIVERED', 'READ')").get() as { count: number };
+    const totalDeliveredRow = db.prepare("SELECT COUNT(*) as count FROM messages WHERE from_me = 1 AND status IN ('DELIVERED', 'READ')").get() as { count: number };
+    const totalReadRow = db.prepare("SELECT COUNT(*) as count FROM messages WHERE from_me = 1 AND status = 'READ'").get() as { count: number };
+    const totalRepliesRow = db.prepare("SELECT COUNT(DISTINCT remote_jid) as count FROM messages WHERE from_me = 0 AND remote_jid IN (SELECT DISTINCT remote_jid FROM messages WHERE from_me = 1)").get() as { count: number };
+
+    return {
+      totalAccounts: totalAccountsRow ? totalAccountsRow.count : 0,
+      totalRules: totalRulesRow ? totalRulesRow.count : 0,
+      totalMessages: totalMessagesRow ? totalMessagesRow.count : 0,
+      chartData,
+      broadcastStats: {
+        sent: totalSentRow ? totalSentRow.count : 0,
+        delivered: totalDeliveredRow ? totalDeliveredRow.count : 0,
+        read: totalReadRow ? totalReadRow.count : 0,
+        replies: totalRepliesRow ? totalRepliesRow.count : 0
+      }
+    };
+  } catch (err) {
+    console.error("Gagal memuat data analitik:", err);
+    return {
+      totalAccounts: 0,
+      totalRules: 0,
+      totalMessages: 0,
+      chartData: [],
+      broadcastStats: { sent: 0, delivered: 0, read: 0, replies: 0 }
+    };
+  }
+}
+
+export function updateMessageStatus(msgKeyId: string, status: string) {
+  try {
+    const stmt = db.prepare("UPDATE messages SET status = ? WHERE msg_key_id = ?");
+    stmt.run(status, msgKeyId);
+  } catch (err) {
+    console.error("Gagal update status pesan:", err);
   }
 }

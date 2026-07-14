@@ -1,8 +1,9 @@
 import { app, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage } from 'electron';
 import * as path from 'path';
-import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount, sendMessage, getGroups, simulateTyping, joinGroupByCode } from './whatsapp-manager';
+import { initWhatsAppManager, cleanupWhatsAppManager, connectToWhatsApp, deleteWhatsAppAccount, sendMessage, getGroups, simulateTyping, joinGroupByCode, scrapeGroupParticipants, getGroupInviteInfo } from './whatsapp-manager';
 import { reloadRulesCache } from './wa-rule-engine';
-import { initDatabase, getDatabase, deleteMessage, clearAllMessages, getMessages } from './database';
+import { initDatabase, getDatabase, deleteMessage, clearAllMessages, getMessages, getAnalyticsData } from './database';
+import { startGmapsScraper, stopGmapsScraper } from './gmaps-scraper';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -104,6 +105,20 @@ app.on('window-all-closed', function () {
 
 // [ANTI-BAN] Matikan semua socket secara aman sebelum aplikasi benar-benar tertutup
 app.on('before-quit', () => {
+  cleanupWhatsAppManager();
+});
+
+// [BUG FIX] Tangkap sinyal terminasi paksa (seperti saat npm run dev di-restart/hot-reload)
+// agar tidak ada proses zombie WhatsApp (Error 440 Conflict) yang tertinggal di memori.
+const handleGracefulShutdown = () => {
+  console.log('[SYSTEM] Menerima sinyal terminasi paksa. Melakukan pembersihan...');
+  cleanupWhatsAppManager();
+  process.exit(0);
+};
+
+process.on('SIGINT', handleGracefulShutdown);
+process.on('SIGTERM', handleGracefulShutdown);
+process.on('exit', () => {
   cleanupWhatsAppManager();
 });
 
@@ -227,4 +242,28 @@ ipcMain.handle('simulate-typing', async (event, accountId: string, jid: string, 
 // [FITUR BARU] Endpoint untuk join grup dari kode undangan
 ipcMain.handle('join-group-by-code', async (event, accountId: string, code: string) => {
   return await joinGroupByCode(accountId, code);
+});
+
+// [FITUR BARU] Endpoint untuk cek metadata invite link grup
+ipcMain.handle('get-group-invite-info', async (event, accountId: string, code: string) => {
+  return await getGroupInviteInfo(accountId, code);
+});
+
+// [ANALYTICS] Endpoint untuk dashboard analitik
+  ipcMain.handle('get-analytics', async () => {
+    return getAnalyticsData();
+  });
+  
+  // Gmaps Scraper Handlers
+  ipcMain.on('start-gmaps-scraper', (event, accountId: string, query: string, locationFilter: string = '') => {
+    startGmapsScraper(mainWindow!, accountId, query, locationFilter);
+  });
+
+  ipcMain.on('stop-gmaps-scraper', () => {
+    stopGmapsScraper();
+  });
+
+// [FITUR BARU] Endpoint untuk Group Scraper
+ipcMain.handle('scrape-group', async (event, accountId: string, groupJid: string) => {
+  return await scrapeGroupParticipants(accountId, groupJid);
 });
