@@ -9,6 +9,7 @@ export function ApiGateway() {
   const [logs, setLogs] = useState<{ time: string; type: string; msg: string }[]>([]);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'php' | 'node' | 'python' | 'curl'>('php');
+  const [mainTab, setMainTab] = useState<'overview' | 'webhook' | 'docs'>('overview');
   const [webhookEnabled, setWebhookEnabled] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
 
@@ -187,122 +188,174 @@ print(response.text)`;
 
       <div className="flex-1 flex overflow-hidden">
         {/* Kolom Kiri: Pengaturan & Code Snippets */}
-        <div className="w-1/2 p-8 overflow-y-auto border-r border-border/50 scrollbar-thin">
+        <div className="w-1/2 p-8 overflow-y-auto border-r border-border/50 scrollbar-thin flex flex-col">
           
-          {/* Card API Key */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6 relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-wa-primary/10 rounded-full blur-2xl"></div>
-            <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">Kredensial Keamanan</h3>
-            <div className="mb-2">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">API Key Anda</label>
-              <div className="flex">
-                <input 
-                  type="text" 
-                  value={apiKey} 
-                  readOnly 
-                  placeholder={isRunning ? apiKey : "Klik tombol aktifkan untuk men-generate key"}
-                  className="flex-1 bg-background border border-border rounded-l-xl px-4 py-3 font-mono text-sm text-foreground focus:outline-none"
-                />
-                <button 
-                  onClick={() => copyToClipboard(apiKey)}
-                  disabled={!apiKey}
-                  className="bg-muted hover:bg-muted/80 border border-l-0 border-border rounded-r-xl px-4 flex items-center justify-center transition-colors disabled:opacity-50"
-                  title="Salin API Key"
-                >
-                  {copied ? <CheckCircle2 size={18} className="text-emerald-500" /> : <Copy size={18} className="text-muted-foreground" />}
-                </button>
-                <button 
-                  onClick={() => {
-                    if (isRunning) {
-                      alert("Matikan server terlebih dahulu untuk mengganti API Key.");
-                      return;
-                    }
-                    const newKey = generateApiKey();
-                    setApiKey(newKey);
-                    localStorage.setItem('apiGateway_apiKey', newKey);
-                  }}
-                  className="ml-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
-                  title="Regenerate API Key"
-                >
-                  <RefreshCw size={18} />
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-amber-500 mt-2 font-medium flex items-center">
-              * Sertakan key ini di HTTP Header `x-api-key` pada setiap request Anda.
-            </p>
+          {/* Main Tabs Navigation */}
+          <div className="flex bg-muted/50 p-1 rounded-xl mb-6">
+            <button
+              onClick={() => setMainTab('overview')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                mainTab === 'overview' 
+                  ? 'bg-background shadow-sm text-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+              }`}
+            >
+              Ikhtisar
+            </button>
+            <button
+              onClick={() => setMainTab('webhook')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                mainTab === 'webhook' 
+                  ? 'bg-background shadow-sm text-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+              }`}
+            >
+              Webhook
+            </button>
+            <button
+              onClick={() => setMainTab('docs')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                mainTab === 'docs' 
+                  ? 'bg-background shadow-sm text-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+              }`}
+            >
+              API Docs
+            </button>
           </div>
 
-          {/* Card Webhook */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6 relative overflow-hidden">
-            <div className="absolute -left-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center">
-                Webhook <span className="ml-2 text-xs font-normal normal-case bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">2-Way API</span>
-              </h3>
-              <div className="flex items-center">
-                <span className={`text-xs font-semibold mr-3 ${webhookEnabled ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-                  {webhookEnabled ? 'ON' : 'OFF'}
-                </span>
-                <button
-                  onClick={handleWebhookToggle}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${webhookEnabled ? 'bg-emerald-500' : 'bg-muted'}`}
-                >
-                  <span className={`absolute left-1 top-1 w-3 h-3 rounded-full bg-white transition-transform ${webhookEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
+          <div className="flex-1">
+            {mainTab === 'overview' && (
+              <div className="space-y-6">
+                {/* Card API Key */}
+                <div className="bg-card border border-border rounded-2xl p-6 shadow-sm relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 w-24 h-24 bg-wa-primary/10 rounded-full blur-2xl"></div>
+                  <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">Kredensial Keamanan</h3>
+                  <div className="mb-2">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">API Key Anda</label>
+                    <div className="flex">
+                      <input 
+                        type="text" 
+                        value={apiKey} 
+                        readOnly 
+                        placeholder={isRunning ? apiKey : "Klik tombol aktifkan untuk men-generate key"}
+                        className="flex-1 bg-background border border-border rounded-l-xl px-4 py-3 font-mono text-sm text-foreground focus:outline-none"
+                      />
+                      <button 
+                        onClick={() => copyToClipboard(apiKey)}
+                        disabled={!apiKey}
+                        className="bg-muted hover:bg-muted/80 border border-l-0 border-border rounded-r-xl px-4 flex items-center justify-center transition-colors disabled:opacity-50"
+                        title="Salin API Key"
+                      >
+                        {copied ? <CheckCircle2 size={18} className="text-emerald-500" /> : <Copy size={18} className="text-muted-foreground" />}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (isRunning) {
+                            alert("Matikan server terlebih dahulu untuk mengganti API Key.");
+                            return;
+                          }
+                          const newKey = generateApiKey();
+                          setApiKey(newKey);
+                          localStorage.setItem('apiGateway_apiKey', newKey);
+                        }}
+                        className="ml-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
+                        title="Regenerate API Key"
+                      >
+                        <RefreshCw size={18} />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-500 mt-2 font-medium flex items-center">
+                    * Sertakan key ini di HTTP Header `x-api-key` pada setiap request Anda.
+                  </p>
+                </div>
+                
+                <div className="bg-muted/30 border border-border rounded-2xl p-6 text-sm text-muted-foreground">
+                  <h4 className="font-semibold text-foreground mb-2">Cara Menggunakan:</h4>
+                  <ol className="list-decimal pl-4 space-y-2">
+                    <li>Tekan tombol <strong className="text-foreground">Aktifkan Gateway</strong> di kanan atas.</li>
+                    <li>Gunakan <strong className="text-foreground">API Key</strong> di atas untuk otentikasi.</li>
+                    <li>Buka tab <strong className="text-foreground">API Docs</strong> untuk melihat contoh kode integrasi pengiriman pesan.</li>
+                    <li>Gunakan tab <strong className="text-foreground">Webhook</strong> jika Anda ingin menerima balasan pesan secara otomatis.</li>
+                  </ol>
+                </div>
               </div>
-            </div>
-            
-            <div className="mb-2">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Webhook URL Tujuan (POST)</label>
-              <input 
-                type="text" 
-                value={webhookUrl} 
-                onChange={(e) => handleWebhookUrlChange(e.target.value)}
-                placeholder="https://sistem-anda.com/api/webhook"
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-wa-primary transition-colors"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-              Jika aktif, setiap pesan yang masuk ke WhatsApp akan di-*forward* ke URL ini secara *real-time* dengan metode <strong className="text-foreground">POST JSON</strong>.
-            </p>
-          </div>
+            )}
 
-          {/* Card API Docs / Snippets */}
-          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-            <div className="bg-muted/50 p-4 border-b border-border flex justify-between items-center">
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Contoh Integrasi</h3>
-            </div>
-            
-            {/* Tabs */}
-            <div className="flex border-b border-border bg-background">
-              {['php', 'node', 'python', 'curl'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab as any)}
-                  className={`flex-1 py-3 text-xs font-bold uppercase transition-all ${activeTab === tab ? 'text-wa-primary border-b-2 border-wa-primary bg-wa-primary/5' : 'text-muted-foreground hover:bg-muted'}`}
-                >
-                  {tab === 'node' ? 'Node.js' : tab}
-                </button>
-              ))}
-            </div>
+            {mainTab === 'webhook' && (
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm relative overflow-hidden">
+                <div className="absolute -left-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center">
+                    Webhook <span className="ml-2 text-xs font-normal normal-case bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">2-Way API</span>
+                  </h3>
+                  <div className="flex items-center">
+                    <span className={`text-xs font-semibold mr-3 ${webhookEnabled ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                      {webhookEnabled ? 'ON' : 'OFF'}
+                    </span>
+                    <button
+                      onClick={handleWebhookToggle}
+                      className={`relative w-10 h-5 rounded-full transition-colors ${webhookEnabled ? 'bg-emerald-500' : 'bg-muted'}`}
+                    >
+                      <span className={`absolute left-1 top-1 w-3 h-3 rounded-full bg-white transition-transform ${webhookEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="mb-2">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Webhook URL Tujuan (POST)</label>
+                  <input 
+                    type="text" 
+                    value={webhookUrl} 
+                    onChange={(e) => handleWebhookUrlChange(e.target.value)}
+                    placeholder="https://sistem-anda.com/api/webhook"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-wa-primary transition-colors"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  Jika aktif, setiap pesan yang masuk ke WhatsApp akan di-*forward* ke URL ini secara *real-time* dengan metode <strong className="text-foreground">POST JSON</strong>.
+                </p>
+              </div>
+            )}
 
-            {/* Code Box */}
-            <div className="relative group">
-              <pre className="p-6 bg-[#0d1117] text-gray-300 font-mono text-[13px] overflow-x-auto">
-                <code>{getSnippet()}</code>
-              </pre>
-              <button 
-                onClick={() => copyToClipboard(getSnippet())}
-                className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                {copied ? <CheckCircle2 size={16} className="text-emerald-400" /> : <Copy size={16} className="text-gray-400" />}
-              </button>
-            </div>
-            
-            <div className="p-4 bg-muted/30 border-t border-border text-xs text-muted-foreground">
-              Endpoint ini akan memicu akun yang Anda isi pada <code className="bg-background px-1 py-0.5 rounded border border-border">accountId</code> untuk mengirim pesan ke <code className="bg-background px-1 py-0.5 rounded border border-border">number</code>. Pastikan <code className="bg-background px-1 py-0.5 rounded border border-border">accountId</code> tersebut sudah di-scan di aplikasi ini.
-            </div>
+            {mainTab === 'docs' && (
+              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-muted/50 p-4 border-b border-border flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Contoh Integrasi API</h3>
+                </div>
+                
+                {/* Tabs */}
+                <div className="flex border-b border-border bg-background">
+                  {['php', 'node', 'python', 'curl'].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab as any)}
+                      className={`flex-1 py-3 text-xs font-bold uppercase transition-all ${activeTab === tab ? 'text-wa-primary border-b-2 border-wa-primary bg-wa-primary/5' : 'text-muted-foreground hover:bg-muted'}`}
+                    >
+                      {tab === 'node' ? 'Node.js' : tab}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Code Box */}
+                <div className="relative group">
+                  <pre className="p-6 bg-[#0d1117] text-gray-300 font-mono text-[13px] overflow-x-auto">
+                    <code>{getSnippet()}</code>
+                  </pre>
+                  <button 
+                    onClick={() => copyToClipboard(getSnippet())}
+                    className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    {copied ? <CheckCircle2 size={16} className="text-emerald-400" /> : <Copy size={16} className="text-gray-400" />}
+                  </button>
+                </div>
+                
+                <div className="p-4 bg-muted/30 border-t border-border text-xs text-muted-foreground leading-relaxed">
+                  Endpoint ini akan memicu akun yang Anda isi pada <code className="bg-background px-1 py-0.5 rounded border border-border">accountId</code> untuk mengirim pesan ke <code className="bg-background px-1 py-0.5 rounded border border-border">number</code>.<br/>Pastikan <code className="bg-background px-1 py-0.5 rounded border border-border">accountId</code> tersebut sudah di-scan di aplikasi ini.
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
