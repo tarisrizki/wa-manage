@@ -50,9 +50,16 @@ export function startApiGateway(apiKey: string, onLog: (log: any) => void): ApiG
     }
 
     try {
-      onLog({ type: 'info', msg: `Memproses request ke ${number} via akun ${accountId}...` });
+      // Sanitasi nomor (hapus karakter non-digit)
+      let cleanNumber = number.replace(/\D/g, '');
+      // Opsional: jika dimulai dengan 0, ubah ke 62 (Indonesia) agar kompatibel dengan standar internasional Baileys
+      if (cleanNumber.startsWith('0')) {
+        cleanNumber = '62' + cleanNumber.substring(1);
+      }
+
+      onLog({ type: 'info', msg: `Memproses request ke ${cleanNumber} via akun ${accountId}...` });
       
-      const success = await sendMessage(accountId, number, message);
+      const success = await sendMessage(accountId, cleanNumber, message);
       
       if (success) {
         onLog({ type: 'success', msg: `✅ Berhasil kirim pesan ke ${number}` });
